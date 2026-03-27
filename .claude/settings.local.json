@@ -49,7 +49,16 @@
       "Bash(aqt list-qt:*)",
       "Bash(aqt install-qt:*)",
       "Bash(C:/Qt/5.15.2/msvc2019_64/bin/qmake.exe --version)",
-      "Bash(python generate_proposal_v2.py)"
+      "Bash(python generate_proposal_v2.py)",
+      "Bash(where ninja:*)",
+      "Bash(where cmake:*)",
+      "Bash(cmake ../src -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=\"C:/Qt/5.15.2/msvc2019_64\")",
+      "Bash(cmd //c \"C:\\\\Users\\\\ACE\\\\Desktop\\\\iu\"\"Advanced Computer Graphics\"\"meshlab-srcbuild_meshlab.bat\")",
+      "Bash(cmd //c C:UsersACEDesktopbuild_meshlab.bat)",
+      "Bash(cmd /c \"C:\\\\Users\\\\ACE\\\\Desktop\\\\build_meshlab.bat\")",
+      "Bash(cmd /c \"call \"\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\18\\\\Community\\\\VC\\\\Auxiliary\\\\Build\\\\vcvars64.bat\"\" >nul 2>&1 && cl\")",
+      "Bash(powershell.exe -Command \"Start-Process cmd -ArgumentList ''/c'',''C:\\\\Users\\\\ACE\\\\Desktop\\\\build_meshlab.bat'',''>'',''C:\\\\Users\\\\ACE\\\\Desktop\\\\build_log.txt'',''2>&1'' -Wait -NoNewWindow\")",
+      "Bash(powershell.exe -NoProfile -Command \"& cmd.exe /c ''C:\\\\Users\\\\ACE\\\\Desktop\\\\build_meshlab.bat'' 2>&1 | Out-File -FilePath C:\\\\Users\\\\ACE\\\\Desktop\\\\build_log.txt -Encoding utf8\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\ACE\\Desktop"
