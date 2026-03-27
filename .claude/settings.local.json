@@ -58,10 +58,31 @@
       "Bash(cmd /c \"C:\\\\Users\\\\ACE\\\\Desktop\\\\build_meshlab.bat\")",
       "Bash(cmd /c \"call \"\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\18\\\\Community\\\\VC\\\\Auxiliary\\\\Build\\\\vcvars64.bat\"\" >nul 2>&1 && cl\")",
       "Bash(powershell.exe -Command \"Start-Process cmd -ArgumentList ''/c'',''C:\\\\Users\\\\ACE\\\\Desktop\\\\build_meshlab.bat'',''>'',''C:\\\\Users\\\\ACE\\\\Desktop\\\\build_log.txt'',''2>&1'' -Wait -NoNewWindow\")",
-      "Bash(powershell.exe -NoProfile -Command \"& cmd.exe /c ''C:\\\\Users\\\\ACE\\\\Desktop\\\\build_meshlab.bat'' 2>&1 | Out-File -FilePath C:\\\\Users\\\\ACE\\\\Desktop\\\\build_log.txt -Encoding utf8\")"
+      "Bash(powershell.exe -NoProfile -Command \"& cmd.exe /c ''C:\\\\Users\\\\ACE\\\\Desktop\\\\build_meshlab.bat'' 2>&1 | Out-File -FilePath C:\\\\Users\\\\ACE\\\\Desktop\\\\build_log.txt -Encoding utf8\")",
+      "Read(//c/Program Files/VCG/MeshLab/**)",
+      "Read(//c/Program Files \\(x86\\)/VCG/**)",
+      "Read(//c/Users/ACE/AppData/Local/**)",
+      "Bash(cmake --build . --target filter_color_by_height --config Release)",
+      "Bash(cmake ..)",
+      "Bash(cmd.exe /c \"call \"\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\18\\\\Community\\\\VC\\\\Auxiliary\\\\Build\\\\vcvars64.bat\"\" && cd /d \"\"C:\\\\Users\\\\ACE\\\\Desktop\\\\iu\\\\Advanced Computer Graphics\\\\meshlab-src\\\\build2\"\" && cmake ..\\\\src -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=C:\\\\Qt\\\\5.15.2\\\\msvc2019_64 -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl\")",
+      "Bash(cmd //C \"call \"\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\18\\\\Community\\\\VC\\\\Auxiliary\\\\Build\\\\vcvars64.bat\"\" 2>&1 && cd /d \"\"C:\\\\Users\\\\ACE\\\\Desktop\\\\iu\\\\Advanced Computer Graphics\\\\meshlab-src\\\\build2\"\" && cmake ..\\\\src -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=C:\\\\Qt\\\\5.15.2\\\\msvc2019_64 -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl 2>&1\")",
+      "Bash(find 'C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC' -name cl.exe -path */x64/*)",
+      "Read(//c/Program Files \\(x86\\)/Windows Kits/**)",
+      "Bash(\"C:/Program Files/CMake/bin/cmake.exe\" --version)",
+      "Bash(\"C:/Strawberry/c/bin/cmake.exe\" --version)",
+      "Bash(export PATH=\"/c/Program Files \\(x86\\)/Windows Kits/10/bin/10.0.26100.0/x64:/c/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64:$PATH\")",
+      "Bash(export INCLUDE=\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\18\\\\Community\\\\VC\\\\Tools\\\\MSVC\\\\14.50.35717\\\\include;C:\\\\Program Files \\(x86\\)\\\\Windows Kits\\\\10\\\\Include\\\\10.0.26100.0\\\\ucrt;C:\\\\Program Files \\(x86\\)\\\\Windows Kits\\\\10\\\\Include\\\\10.0.26100.0\\\\shared;C:\\\\Program Files \\(x86\\)\\\\Windows Kits\\\\10\\\\Include\\\\10.0.26100.0\\\\um;C:\\\\Program Files \\(x86\\)\\\\Windows Kits\\\\10\\\\Include\\\\10.0.26100.0\\\\winrt\")",
+      "Bash(export LIB=\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\18\\\\Community\\\\VC\\\\Tools\\\\MSVC\\\\14.50.35717\\\\lib\\\\x64;C:\\\\Program Files \\(x86\\)\\\\Windows Kits\\\\10\\\\Lib\\\\10.0.26100.0\\\\ucrt\\\\x64;C:\\\\Program Files \\(x86\\)\\\\Windows Kits\\\\10\\\\Lib\\\\10.0.26100.0\\\\um\\\\x64\")",
+      "Bash(ninja filter_color_by_height)",
+      "Bash(python delaunay_triangulation.py)",
+      "Bash(powershell -Command \"Start-Process cmd -ArgumentList ''/c copy \"\"C:\\\\Users\\\\ACE\\\\Desktop\\\\iu\\\\Advanced Computer Graphics\\\\meshlab-src\\\\build\\\\src\\\\distrib\\\\plugins\\\\filter_color_by_height.dll\"\" \"\"C:\\\\Program Files\\\\VCG\\\\MeshLab\\\\plugins\\\\\"\"'' -Verb RunAs\")",
+      "Bash(where python:*)",
+      "Bash(\"c:/Users/ACE/miniconda3/python.exe\" delaunay_triangulation.py)"
     ],
     "additionalDirectories": [
-      "c:\\Users\\ACE\\Desktop"
+      "c:\\Users\\ACE\\Desktop",
+      "c:\\Users\\ACE\\Desktop\\iu\\Advanced Computer Graphics\\meshlab-src\\src\\meshlabplugins",
+      "C:\\Program Files\\VCG\\MeshLab\\plugins"
     ]
   }
 }
