@@ -14,8 +14,12 @@
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
 
 \hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\graphicspath{{figures/}}
 
 \lstset{
   basicstyle=\ttfamily\small,
@@ -67,6 +71,27 @@ A \textbf{boundary edge} is an edge that belongs to exactly one triangle. A \tex
 \end{enumerate}
 
 The tracing uses VCG's vertex--face iterator to enumerate all faces around the current vertex and locate the next border edge, ensuring correct traversal even for complex boundary configurations.
+
+Figure~\ref{fig:torus_hole} shows a torus mesh with a hole detected by this step.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{01_torus_with_hole.png}
+  \caption{Torus mesh with a hole}
+  \label{fig:torus_overview}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{02_torus_closeup.png}
+  \caption{Close-up of the hole boundary}
+  \label{fig:torus_closeup}
+\end{subfigure}
+\caption{Hole detection on a torus mesh. The boundary edges form a closed loop around the missing region.}
+\label{fig:torus_hole}
+\end{figure}
 
 % ------------------------------------------------------------
 \subsection{Advancing Front Triangulation}
@@ -189,6 +214,80 @@ The advancing front triangulation produces geometrically correct but potentially
 where $N(i)$ is the set of vertices adjacent to $v_i$. \textbf{Boundary vertices are held fixed} throughout the smoothing to preserve the exact boundary shape and ensure a seamless transition with the original mesh. The default is 3 iterations.
 
 % ============================================================
+\section{Results}
+% ============================================================
+
+The plugin was tested on meshes with artificially created holes of varying complexity.
+
+% ── Torus ──
+\subsection{Torus Mesh}
+
+Figure~\ref{fig:filter_dialog} shows the plugin's parameter dialog in MeshLab. Figures~\ref{fig:torus_result} and~\ref{fig:torus_result_closeup} show the torus mesh after applying the Advancing Front filter.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{03_filter_dialog.png}
+\caption{Plugin parameter dialog in MeshLab.}
+\label{fig:filter_dialog}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{01_torus_with_hole.png}
+  \caption{Before: torus with hole}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{04_torus_filled.png}
+  \caption{After: hole filled}
+\end{subfigure}
+\caption{Torus hole filling result (overview).}
+\label{fig:torus_result}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{02_torus_closeup.png}
+  \caption{Before: close-up of hole}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{05_torus_filled_closeup.png}
+  \caption{After: close-up of filled region}
+\end{subfigure}
+\caption{Torus hole filling result (close-up). The generated triangles blend smoothly with the surrounding mesh after Laplacian smoothing.}
+\label{fig:torus_result_closeup}
+\end{figure}
+
+% ── Sphere ──
+\subsection{Sphere Mesh (Large Hole)}
+
+The plugin was also tested on a sphere with a larger hole to evaluate performance on wider gaps where Rules~2 and~3 are more frequently applied.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{06_sphere_before.png}
+  \caption{Before: sphere with large hole}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{07_sphere_after.png}
+  \caption{After: hole filled}
+\end{subfigure}
+\caption{Sphere large hole filling. The advancing front method produces uniform triangles even for larger holes by combining all three angle-based rules.}
+\label{fig:sphere_result}
+\end{figure}
+
+% ============================================================
 \section{Implementation}
 % ============================================================
 
@@ -259,7 +358,7 @@ See \texttt{BUILD\_AND\_RUN.md} for detailed instructions.
 \section{Conclusion}
 % ============================================================
 
-This assignment implements the Advancing Front hole filling algorithm as a MeshLab C++ plugin. The method uses three angle-based rules to progressively grow triangles from the boundary inward, producing well-shaped meshes with uniform triangle quality. The angle-based vertex selection ensures that narrow gaps are closed first, preventing self-intersection and maintaining good aspect ratios. Combined with Laplacian smoothing, the result is a smooth, seamless patch that blends naturally with the surrounding surface geometry.
+This assignment implements the Advancing Front hole filling algorithm as a MeshLab C++ plugin. The method uses three angle-based rules to progressively grow triangles from the boundary inward, producing well-shaped meshes with uniform triangle quality. The angle-based vertex selection ensures that narrow gaps are closed first, preventing self-intersection and maintaining good aspect ratios. Combined with Laplacian smoothing, the result is a smooth, seamless patch that blends naturally with the surrounding surface geometry. The results on both torus and sphere meshes demonstrate that the method handles holes of varying sizes and curvatures effectively.
 
 % ============================================================
 \begin{thebibliography}{9}
