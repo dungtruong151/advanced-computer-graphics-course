@@ -54,7 +54,7 @@ cmake --build .
 **Option 1 - Use the build script:**
 
 ```cmd
-C:\Users\ACE\Desktop\build_nfd.bat
+NFD-HoleFill\build_nfd.bat
 ```
 
 This script:
