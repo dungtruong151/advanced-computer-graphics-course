@@ -9,6 +9,7 @@
 #include <set>
 #include <map>
 #include <vector>
+#include <string>
 #include <algorithm>
 #include <limits>
 
@@ -111,15 +112,19 @@ std::map<std::string, QVariant> FilterAdvancingFrontPlugin::applyFilter(
 	unsigned int& /*postConditionMask*/,
 	vcg::CallBackPos* cb)
 {
+	auto report = [&](int progress, const char* message) {
+		if (cb) cb(progress, message);
+	};
+
 	switch (ID(action)) {
 	case FP_ADVANCING_FRONT: {
 		CMeshO& m = md.mm()->cm;
 
-		int maxHoleSize      = parameters.getInt("MaxHoleSize");
-		int smoothIterations = parameters.getInt("SmoothingIterations");
+		int maxHoleSize      = std::max(3, parameters.getInt("MaxHoleSize"));
+		int smoothIterations = std::max(0, parameters.getInt("SmoothingIterations"));
 
 		// Enable Ocf optional components
-		cb(0, "Updating topology...");
+		report(0, "Updating topology...");
 		m.face.EnableFFAdjacency();
 		m.face.EnableVFAdjacency();
 		m.vert.EnableVFAdjacency();
@@ -130,7 +135,7 @@ std::map<std::string, QVariant> FilterAdvancingFrontPlugin::applyFilter(
 		vcg::tri::UpdateNormal<CMeshO>::PerVertexNormalizedPerFace(m);
 
 		// Detect holes
-		cb(5, "Detecting holes...");
+		report(5, "Detecting holes...");
 		std::vector<HoleBoundary> holes = detectHoles(m, maxHoleSize);
 
 		if (holes.empty()) {
@@ -142,7 +147,8 @@ std::map<std::string, QVariant> FilterAdvancingFrontPlugin::applyFilter(
 		int totalHoles = (int)holes.size();
 		for (int hi = 0; hi < totalHoles; hi++) {
 			int progress = 10 + (80 * hi / totalHoles);
-			cb(progress, ("Filling hole " + std::to_string(hi + 1) + "/" + std::to_string(totalHoles) + "...").c_str());
+			std::string progressMsg = "Filling hole " + std::to_string(hi + 1) + "/" + std::to_string(totalHoles) + "...";
+			report(progress, progressMsg.c_str());
 
 			log("Hole %d/%d: %d boundary edges.", hi + 1, totalHoles, (int)holes[hi].vertexIndices.size());
 
@@ -158,14 +164,14 @@ std::map<std::string, QVariant> FilterAdvancingFrontPlugin::applyFilter(
 		}
 
 		// Final updates
-		cb(95, "Updating normals...");
+		report(95, "Updating normals...");
 		vcg::tri::UpdateTopology<CMeshO>::FaceFace(m);
 		vcg::tri::UpdateNormal<CMeshO>::PerVertexNormalizedPerFace(m);
 		vcg::tri::UpdateNormal<CMeshO>::PerFaceNormalized(m);
 		vcg::tri::UpdateBounding<CMeshO>::Box(m);
 
 		log("Advancing Front Hole Filling completed: %d hole(s) filled.", totalHoles);
-		cb(100, "Done.");
+		report(100, "Done.");
 		break;
 	}
 	default: wrongActionCalled(action);
@@ -186,6 +192,9 @@ FilterAdvancingFrontPlugin::detectHoles(CMeshO& m, int maxHoleSize)
 	vcg::tri::UpdateFlags<CMeshO>::VertexBorderFromFaceBorder(m);
 
 	std::set<std::pair<size_t, size_t>> visitedEdges;
+	auto edgeKey = [](size_t a, size_t b) {
+		return std::make_pair(std::min(a, b), std::max(a, b)); // undirected edge key
+	};
 
 	for (auto fi = m.face.begin(); fi != m.face.end(); ++fi) {
 		if (fi->IsD()) continue;
@@ -194,7 +203,7 @@ FilterAdvancingFrontPlugin::detectHoles(CMeshO& m, int maxHoleSize)
 				size_t vi = vcg::tri::Index(m, fi->V(ei));
 				size_t vj = vcg::tri::Index(m, fi->V((ei + 1) % 3));
 
-				if (visitedEdges.count({vi, vj})) continue;
+				if (visitedEdges.count(edgeKey(vi, vj))) continue;
 
 				HoleBoundary hole;
 				size_t startV = vi;
@@ -202,14 +211,19 @@ FilterAdvancingFrontPlugin::detectHoles(CMeshO& m, int maxHoleSize)
 				size_t nextV  = vj;
 				bool loopComplete = false;
 				int safety = 0;
+				const int maxSteps = std::max(32, maxHoleSize * 3);
 
-				while (safety < maxHoleSize * 2) {
+				while (safety < maxSteps) {
 					safety++;
 					hole.vertexIndices.push_back(curV);
-					visitedEdges.insert({curV, nextV});
+					visitedEdges.insert(edgeKey(curV, nextV));
 
 					size_t prevV = curV;
 					curV = nextV;
+					if (curV == startV) {
+						loopComplete = true;
+						break;
+					}
 					bool foundNext = false;
 
 					CMeshO::VertexPointer vp = &m.vert[curV];
@@ -217,21 +231,28 @@ FilterAdvancingFrontPlugin::detectHoles(CMeshO& m, int maxHoleSize)
 					for (; !vfi.End(); ++vfi) {
 						CMeshO::FacePointer fp = vfi.F();
 						for (int e = 0; e < 3; e++) {
+							if (!vcg::face::IsBorder(*fp, e)) continue;
+
 							size_t eV0 = vcg::tri::Index(m, fp->V(e));
 							size_t eV1 = vcg::tri::Index(m, fp->V((e + 1) % 3));
-							if (eV0 == curV && eV1 != prevV && vcg::face::IsBorder(*fp, e)) {
-								nextV = eV1;
-								foundNext = true;
-								break;
-							}
+							size_t candidate = std::numeric_limits<size_t>::max();
+							if (eV0 == curV && eV1 != prevV)
+								candidate = eV1;
+							else if (eV1 == curV && eV0 != prevV)
+								candidate = eV0;
+							if (candidate == std::numeric_limits<size_t>::max()) continue;
+
+							// Avoid revisiting an already-walked edge (except closing edge to start).
+							if (candidate != startV && visitedEdges.count(edgeKey(curV, candidate))) continue;
+
+							nextV = candidate;
+							foundNext = true;
+							break;
 						}
 						if (foundNext) break;
 					}
 
-					if (!foundNext || nextV == startV) {
-						if (nextV == startV) loopComplete = true;
-						break;
-					}
+					if (!foundNext) break;
 				}
 
 				if (loopComplete && (int)hole.vertexIndices.size() >= 3 &&
@@ -299,6 +320,7 @@ FilterAdvancingFrontPlugin::advancingFrontFill(const HoleBoundary& hole)
 	// Active front: circular list of vertex indices into patch.vertices
 	std::vector<int> front(n);
 	for (int i = 0; i < (int)n; i++) front[i] = i;
+	const Scalarm PI = (Scalarm)3.14159265358979323846;
 
 	// Helper: compute angle at vertex front[idx] between its two edges
 	auto computeAngle = [&](const std::vector<int>& f, int idx) -> Scalarm {
@@ -315,7 +337,7 @@ FilterAdvancingFrontPlugin::advancingFrontFill(const HoleBoundary& hole)
 
 		Scalarm len1 = e1.Norm();
 		Scalarm len2 = e2.Norm();
-		if (len1 < 1e-10 || len2 < 1e-10) return (Scalarm)M_PI;
+		if (len1 < 1e-10 || len2 < 1e-10) return PI;
 
 		e1 /= len1;
 		e2 /= len2;
@@ -326,10 +348,10 @@ FilterAdvancingFrontPlugin::advancingFrontFill(const HoleBoundary& hole)
 	};
 
 	// Angle thresholds (in radians)
-	const Scalarm RULE1_THRESHOLD = (Scalarm)(75.0 * M_PI / 180.0);   // 75 degrees
-	const Scalarm RULE2_THRESHOLD = (Scalarm)(135.0 * M_PI / 180.0);  // 135 degrees
+	const Scalarm RULE1_THRESHOLD = (Scalarm)(75.0 * PI / 180.0);   // 75 degrees
+	const Scalarm RULE2_THRESHOLD = (Scalarm)(135.0 * PI / 180.0);  // 135 degrees
 
-	int maxIter = (int)(n * 3);  // safety limit
+	int maxIter = (int)(n * 8 + 32);  // safety limit
 
 	while ((int)front.size() > 3 && maxIter > 0) {
 		maxIter--;
@@ -442,10 +464,15 @@ FilterAdvancingFrontPlugin::advancingFrontFill(const HoleBoundary& hole)
 		}
 	}
 
-	// Close the final triangle
-	if (front.size() == 3) {
-		patch.faces.push_back(vcg::Point3i(front[0], front[1], front[2]));
+	// Abort unsafe partial patches.
+	if (front.size() != 3) {
+		patch.faces.clear();
+		patch.numBoundaryVerts = n;
+		return patch;
 	}
+
+	// Close the final triangle
+	patch.faces.push_back(vcg::Point3i(front[0], front[1], front[2]));
 
 	// Post-hoc winding fix: ensure face normals align with avgNormal
 	if (!patch.faces.empty()) {
