@@ -19,7 +19,7 @@
 
 FilterAdvancingFrontPlugin::FilterAdvancingFrontPlugin()
 {
-	typeList = {FP_ADVANCING_FRONT};
+	typeList = {FP_ADVANCING_FRONT, FP_DETECT_HOLE_BOUNDARY};
 	for (ActionIDType tt : types())
 		actionList.push_back(new QAction(filterName(tt), this));
 }
@@ -35,6 +35,7 @@ QString FilterAdvancingFrontPlugin::filterName(ActionIDType filterId) const
 {
 	switch (filterId) {
 	case FP_ADVANCING_FRONT: return "Advancing Front Hole Filling";
+	case FP_DETECT_HOLE_BOUNDARY: return "Detect Hole Boundary (Red)";
 	default: assert(0); return QString();
 	}
 }
@@ -43,6 +44,7 @@ QString FilterAdvancingFrontPlugin::pythonFilterName(ActionIDType f) const
 {
 	switch (f) {
 	case FP_ADVANCING_FRONT: return "apply_advancing_front_hole_filling";
+	case FP_DETECT_HOLE_BOUNDARY: return "detect_hole_boundary_red";
 	default: assert(0); return QString();
 	}
 }
@@ -57,6 +59,10 @@ QString FilterAdvancingFrontPlugin::filterInfo(ActionIDType filterId) const
 		       "adjacent boundary edges. Three angle-based rules control triangle "
 		       "creation for uniform mesh quality. A final Laplacian smoothing "
 		       "pass ensures a smooth transition with the surrounding surface.";
+	case FP_DETECT_HOLE_BOUNDARY:
+		return "Detect and highlight hole boundaries by coloring them red. "
+		       "This filter identifies all boundary vertices that form holes in the mesh "
+		       "and colors them red for easy visualization.";
 	default: assert(0); return "Unknown Filter";
 	}
 }
@@ -65,6 +71,7 @@ FilterAdvancingFrontPlugin::FilterClass FilterAdvancingFrontPlugin::getClass(con
 {
 	switch (ID(a)) {
 	case FP_ADVANCING_FRONT: return FilterPlugin::Remeshing;
+	case FP_DETECT_HOLE_BOUNDARY: return FilterPlugin::Selection;
 	default: assert(0); return FilterPlugin::Generic;
 	}
 }
@@ -79,14 +86,32 @@ int FilterAdvancingFrontPlugin::getPreConditions(const QAction*) const
 	return MeshModel::MM_FACENUMBER;
 }
 
-int FilterAdvancingFrontPlugin::postCondition(const QAction*) const
+int FilterAdvancingFrontPlugin::getRequirements(const QAction* action)
 {
-	return MeshModel::MM_VERTCOORD | MeshModel::MM_FACENORMAL | MeshModel::MM_VERTNORMAL;
+	switch (ID(action)) {
+	case FP_DETECT_HOLE_BOUNDARY:
+		return MeshModel::MM_VERTCOLOR;
+	case FP_ADVANCING_FRONT:
+		return MeshModel::MM_NONE;
+	default:
+		return MeshModel::MM_NONE;
+	}
 }
 
-RichParameterList FilterAdvancingFrontPlugin::initParameterList(const QAction* action, const MeshModel& m)
+int FilterAdvancingFrontPlugin::postCondition(const QAction* action) const
 {
-	RichParameterList parlst;
+	switch (ID(action)) {
+	case FP_DETECT_HOLE_BOUNDARY:
+		return MeshModel::MM_VERTCOORD | MeshModel::MM_VERTCOLOR;
+	case FP_ADVANCING_FRONT:
+		return MeshModel::MM_VERTCOORD | MeshModel::MM_FACENORMAL | MeshModel::MM_VERTNORMAL;
+	default:
+		return MeshModel::MM_VERTCOORD;
+	}
+}
+
+void FilterAdvancingFrontPlugin::initParameterList(const QAction* action, MeshModel& m, RichParameterList& parlst)
+{
 	switch (ID(action)) {
 	case FP_ADVANCING_FRONT:
 		parlst.addParam(RichInt("MaxHoleSize", 100,
@@ -96,9 +121,11 @@ RichParameterList FilterAdvancingFrontPlugin::initParameterList(const QAction* a
 			"Smoothing Iterations",
 			"Number of Laplacian smoothing iterations on the filled patch."));
 		break;
+	case FP_DETECT_HOLE_BOUNDARY:
+		// No parameters needed for boundary detection
+		break;
 	default: assert(0);
 	}
-	return parlst;
 }
 
 // ===================================================================
@@ -117,6 +144,40 @@ std::map<std::string, QVariant> FilterAdvancingFrontPlugin::applyFilter(
 	};
 
 	switch (ID(action)) {
+	case FP_DETECT_HOLE_BOUNDARY: {
+		MeshModel* mm = md.mm();
+		CMeshO& m = mm->cm;
+		
+		report(0, "Updating topology...");
+		
+		// Enable vertex color component on the mesh container first
+		if (!vcg::tri::HasPerVertexColor(m)) {
+			m.vert.EnableColor();
+		}
+		
+		// Then update the mesh model mask
+		mm->updateDataMask(MeshModel::MM_VERTCOLOR | MeshModel::MM_FACEFACETOPO);
+		
+		m.face.EnableFFAdjacency();
+		vcg::tri::UpdateTopology<CMeshO>::FaceFace(m);
+		vcg::tri::UpdateFlags<CMeshO>::FaceBorderFromFF(m);
+		vcg::tri::UpdateFlags<CMeshO>::VertexBorderFromFaceBorder(m);
+		
+		report(30, "Detecting hole boundaries...");
+		int boundaryCount = 0;
+		CMeshO::VertexIterator vi;
+		for (vi = m.vert.begin(); vi != m.vert.end(); ++vi) {
+			if (!(*vi).IsD() && (*vi).IsB()) {
+				// Color boundary vertices red
+				(*vi).C() = vcg::Color4b(255, 0, 0, 255);
+				boundaryCount++;
+			}
+		}
+		
+		log("Detected %d boundary vertices and colored them red.", boundaryCount);
+		report(100, "Done.");
+		break;
+	}
 	case FP_ADVANCING_FRONT: {
 		CMeshO& m = md.mm()->cm;
 

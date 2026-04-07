@@ -11,7 +11,8 @@ class FilterAdvancingFrontPlugin : public QObject, public FilterPlugin
 
 public:
 	enum {
-		FP_ADVANCING_FRONT
+		FP_ADVANCING_FRONT,
+		FP_DETECT_HOLE_BOUNDARY
 	};
 
 	FilterAdvancingFrontPlugin();
@@ -24,8 +25,9 @@ public:
 	FilterClass getClass(const QAction* a) const;
 	FilterArity filterArity(const QAction*) const;
 	int getPreConditions(const QAction*) const;
+	int getRequirements(const QAction*);
 	int postCondition(const QAction*) const;
-	RichParameterList initParameterList(const QAction*, const MeshModel&);
+	void initParameterList(const QAction*, MeshModel &, RichParameterList &);
 	std::map<std::string, QVariant> applyFilter(
 		const QAction* action,
 		const RichParameterList& parameters,
