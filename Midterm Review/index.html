@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Midterm Review - IT516 Advanced Computer Graphics</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Language toggle -->
+<div class="lang-toggle">
+  <button class="lang-btn active" data-lang-btn="vi">VI</button>
+  <button class="lang-btn" data-lang-btn="en">EN</button>
+</div>
+
+<!-- Header -->
+<h1 data-i18n="title"></h1>
+<div class="subtitle">Advanced Computer Graphics &mdash; HCMIU</div>
+<div class="exam-info" data-i18n="examInfo"></div>
+
+<!-- Table of contents -->
+<nav class="toc">
+  <h2 data-i18n="toc"></h2>
+  <div class="toc-grid" id="toc-grid"></div>
+</nav>
+
+<!-- All sections rendered by JS -->
+<main id="content"></main>
+
+<footer>IT516 Advanced Computer Graphics &mdash; HCMIU &mdash; <span data-i18n="footer"></span></footer>
+
+<script src="i18n.js"></script>
+<script src="content.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
