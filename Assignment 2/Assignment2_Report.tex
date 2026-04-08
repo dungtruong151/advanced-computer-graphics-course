@@ -76,7 +76,22 @@ A \textbf{boundary edge} is an edge that belongs to exactly one triangle. A \tex
 
 The tracing uses VCG's vertex--face iterator to enumerate all faces around the current vertex and locate the next border edge, ensuring correct traversal even for complex boundary configurations.
 
-Figure~\ref{fig:torus_hole} shows a torus mesh with a hole detected by this step.
+\subsubsection{Visualizing Hole Boundaries}
+
+To assist with hole detection and visualization, the plugin includes a dedicated filter that highlights hole boundaries. This feature can be accessed via:
+
+\begin{center}
+\texttt{Filters > Selection > Detect Hole Boundary (Red)}
+\end{center}
+
+This filter automatically identifies all boundary vertices that form holes in the mesh and colors them red (RGB: 255, 0, 0) for easy visualization. The implementation iterates through all vertices and marks those flagged as boundary vertices (\texttt{IsB()}) with red color. This visualization step is particularly useful for:
+
+\begin{itemize}[leftmargin=2em]
+  \item Verifying that holes have been correctly detected
+  \item Assessing the size and complexity of holes before filling
+  \item Identifying multiple holes in a single mesh
+  \item Confirming that the hole boundary forms a valid closed loop
+\end{itemize}
 
 \begin{figure}[H]
 \centering
@@ -95,6 +110,25 @@ Figure~\ref{fig:torus_hole} shows a torus mesh with a hole detected by this step
 \end{subfigure}
 \caption{Hole detection on a torus mesh. The boundary edges form a closed loop around the missing region.}
 \label{fig:torus_hole}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{08_boundary_detection_red_vert_view.png}
+  \caption{Overview of boundary detection}
+  \label{fig:boundary_overview}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{08_boundary_detection_red_vert_points.png}
+  \caption{Close-up of red boundary vertices}
+  \label{fig:boundary_closeup}
+\end{subfigure}
+\caption{Boundary vertices highlighted in red using the \texttt{Detect Hole Boundary (Red)} filter. All boundary vertices are colored with RGB(255, 0, 0) for easy visualization before applying the hole filling algorithm.}
+\label{fig:boundary_detection}
 \end{figure}
 
 % ------------------------------------------------------------
