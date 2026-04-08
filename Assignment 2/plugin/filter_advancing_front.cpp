@@ -213,12 +213,20 @@ std::map<std::string, QVariant> FilterAdvancingFrontPlugin::applyFilter(
 
 			log("Hole %d/%d: %d boundary edges.", hi + 1, totalHoles, (int)holes[hi].vertexIndices.size());
 
-			// Advancing front triangulation
-			PatchMesh patch = advancingFrontFill(holes[hi]);
+			// Fit a sphere to the boundary for curvature-aware filling
+			FittedSphere sphere = fitSphere(holes[hi]);
+			if (sphere.valid)
+				log("  Sphere fit: center=(%.3f,%.3f,%.3f) radius=%.3f",
+				    sphere.center[0], sphere.center[1], sphere.center[2], sphere.radius);
+			else
+				log("  No sphere fit (flat region) — filling flat.");
+
+			// Advancing front triangulation (with sphere projection)
+			PatchMesh patch = advancingFrontFill(holes[hi], sphere);
 			if (patch.faces.empty()) continue;
 
-			// Laplacian smoothing
-			smoothPatch(patch, smoothIterations);
+			// Laplacian smoothing (with sphere projection)
+			smoothPatch(patch, smoothIterations, sphere);
 
 			// Merge into mesh
 			mergePatchIntoMesh(m, patch, holes[hi]);
@@ -336,6 +344,98 @@ FilterAdvancingFrontPlugin::detectHoles(CMeshO& m, int maxHoleSize)
 }
 
 // ===================================================================
+// Step 1b: Sphere Fitting
+//
+// Fit a sphere to the boundary vertices using their positions and
+// normals. For a sphere, all surface normals pass through the center.
+// We find the point closest to all normal-lines via least squares:
+//   A = sum_i (I - n_i * n_i^T)
+//   b = sum_i (I - n_i * n_i^T) * v_i
+//   center = A^{-1} * b
+// ===================================================================
+
+FilterAdvancingFrontPlugin::FittedSphere
+FilterAdvancingFrontPlugin::fitSphere(const HoleBoundary& hole)
+{
+	FittedSphere sphere;
+	sphere.valid = false;
+	size_t n = hole.positions.size();
+	if (n < 3) return sphere;
+
+	// Build 3x3 system: A * center = b
+	// A = sum_i (I - n_i * n_i^T), b = A * v_i summed
+	Scalarm A[3][3] = {{0,0,0},{0,0,0},{0,0,0}};
+	Scalarm b[3] = {0, 0, 0};
+
+	int validNormals = 0;
+	for (size_t i = 0; i < n; i++) {
+		Point3m ni = hole.normals[i];
+		if (ni.Norm() < 1e-10) continue;
+		ni.Normalize();
+		validNormals++;
+
+		Point3m vi = hole.positions[i];
+		// M = I - n*n^T
+		for (int r = 0; r < 3; r++) {
+			for (int c = 0; c < 3; c++) {
+				Scalarm Mrc = ((r == c) ? (Scalarm)1.0 : (Scalarm)0.0) - ni[r] * ni[c];
+				A[r][c] += Mrc;
+				b[r] += Mrc * vi[c];
+			}
+		}
+	}
+
+	if (validNormals < 3) return sphere;
+
+	// Solve 3x3 system via Cramer's rule
+	auto det3 = [](Scalarm m[3][3]) -> Scalarm {
+		return m[0][0]*(m[1][1]*m[2][2] - m[1][2]*m[2][1])
+		     - m[0][1]*(m[1][0]*m[2][2] - m[1][2]*m[2][0])
+		     + m[0][2]*(m[1][0]*m[2][1] - m[1][1]*m[2][0]);
+	};
+
+	Scalarm detA = det3(A);
+	if (std::abs(detA) < 1e-10) {
+		// Normals are nearly parallel (flat region) — sphere fitting not meaningful
+		return sphere;
+	}
+
+	// Cramer's rule for each component
+	Point3m center;
+	for (int col = 0; col < 3; col++) {
+		Scalarm Acopy[3][3];
+		for (int r = 0; r < 3; r++)
+			for (int c = 0; c < 3; c++)
+				Acopy[r][c] = (c == col) ? b[r] : A[r][c];
+		center[col] = det3(Acopy) / detA;
+	}
+
+	// Compute average radius
+	Scalarm avgR = 0;
+	for (size_t i = 0; i < n; i++)
+		avgR += (hole.positions[i] - center).Norm();
+	avgR /= (Scalarm)n;
+
+	// Validate: check that the radii are consistent (low variance)
+	Scalarm variance = 0;
+	for (size_t i = 0; i < n; i++) {
+		Scalarm ri = (hole.positions[i] - center).Norm();
+		variance += (ri - avgR) * (ri - avgR);
+	}
+	variance /= (Scalarm)n;
+	Scalarm stddev = std::sqrt(variance);
+
+	// Accept if standard deviation is less than 20% of radius
+	if (avgR > 1e-10 && stddev / avgR < 0.2) {
+		sphere.center = center;
+		sphere.radius = avgR;
+		sphere.valid = true;
+	}
+
+	return sphere;
+}
+
+// ===================================================================
 // Step 2: Advancing Front Hole Filling
 //
 // Algorithm:
@@ -351,7 +451,7 @@ FilterAdvancingFrontPlugin::detectHoles(CMeshO& m, int maxHoleSize)
 // ===================================================================
 
 FilterAdvancingFrontPlugin::PatchMesh
-FilterAdvancingFrontPlugin::advancingFrontFill(const HoleBoundary& hole)
+FilterAdvancingFrontPlugin::advancingFrontFill(const HoleBoundary& hole, const FittedSphere& sphere)
 {
 	PatchMesh patch;
 	size_t n = hole.vertexIndices.size();
@@ -377,6 +477,15 @@ FilterAdvancingFrontPlugin::advancingFrontFill(const HoleBoundary& hole)
 		avgEdgeLen += (hole.positions[i] - hole.positions[j]).Norm();
 	}
 	avgEdgeLen /= (Scalarm)n;
+
+	// Helper: project a point onto the fitted sphere
+	auto projectOnSphere = [&](Point3m p) -> Point3m {
+		if (!sphere.valid) return p;
+		Point3m dir = p - sphere.center;
+		Scalarm len = dir.Norm();
+		if (len < 1e-10) return p;
+		return sphere.center + dir * (sphere.radius / len);
+	};
 
 	// Active front: circular list of vertex indices into patch.vertices
 	std::vector<int> front(n);
@@ -461,7 +570,7 @@ FilterAdvancingFrontPlugin::advancingFrontFill(const HoleBoundary& hole)
 			Scalarm blen = bisector.Norm();
 			if (blen > 1e-10) bisector /= blen;
 
-			Point3m newPos = pCurr + bisector * avgEdgeLen;
+			Point3m newPos = projectOnSphere(pCurr + bisector * avgEdgeLen);
 			int newIdx = (int)patch.vertices.size();
 			patch.vertices.push_back(newPos);
 			patch.normals.push_back(avgNormal);
@@ -500,6 +609,8 @@ FilterAdvancingFrontPlugin::advancingFrontFill(const HoleBoundary& hole)
 			Scalarm d2 = dir2.Norm();
 			if (d1 > 1e-10) newPos1 = pCurr + dir1 * (avgEdgeLen / d1);
 			if (d2 > 1e-10) newPos2 = pCurr + dir2 * (avgEdgeLen / d2);
+			newPos1 = projectOnSphere(newPos1);
+			newPos2 = projectOnSphere(newPos2);
 
 			int newIdx1 = (int)patch.vertices.size();
 			patch.vertices.push_back(newPos1);
@@ -554,7 +665,7 @@ FilterAdvancingFrontPlugin::advancingFrontFill(const HoleBoundary& hole)
 // Step 3: Laplacian Smoothing (boundary vertices held fixed)
 // ===================================================================
 
-void FilterAdvancingFrontPlugin::smoothPatch(PatchMesh& patch, int iterations)
+void FilterAdvancingFrontPlugin::smoothPatch(PatchMesh& patch, int iterations, const FittedSphere& sphere)
 {
 	size_t nVerts    = patch.vertices.size();
 	size_t nBoundary = patch.numBoundaryVerts;
@@ -575,6 +686,15 @@ void FilterAdvancingFrontPlugin::smoothPatch(PatchMesh& patch, int iterations)
 			for (size_t ni : adj[i])
 				avg += patch.vertices[ni];
 			avg /= (Scalarm)adj[i].size();
+
+			// Project smoothed position back onto sphere
+			if (sphere.valid) {
+				Point3m dir = avg - sphere.center;
+				Scalarm len = dir.Norm();
+				if (len > 1e-10)
+					avg = sphere.center + dir * (sphere.radius / len);
+			}
+
 			newPos[i] = avg;
 		}
 		patch.vertices = newPos;

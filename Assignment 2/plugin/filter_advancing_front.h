@@ -50,9 +50,16 @@ private:
 		size_t                     numBoundaryVerts;
 	};
 
+	struct FittedSphere {
+		Point3m center;
+		Scalarm radius;
+		bool valid;
+	};
+
 	std::vector<HoleBoundary> detectHoles(CMeshO& m, int maxHoleSize);
-	PatchMesh advancingFrontFill(const HoleBoundary& hole);
-	void smoothPatch(PatchMesh& patch, int iterations);
+	FittedSphere fitSphere(const HoleBoundary& hole);
+	PatchMesh advancingFrontFill(const HoleBoundary& hole, const FittedSphere& sphere);
+	void smoothPatch(PatchMesh& patch, int iterations, const FittedSphere& sphere);
 	void mergePatchIntoMesh(CMeshO& m, const PatchMesh& patch, const HoleBoundary& hole);
 };
 
