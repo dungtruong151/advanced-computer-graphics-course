@@ -53,13 +53,13 @@ private:
 	// ---- Pipeline steps ----
 	std::vector<HoleBoundary> detectHoles(CMeshO& m, int maxHoleSize);
 
-	PatchMesh triangulatePatch(const HoleBoundary& hole);
+	PatchMesh triangulatePatch(const HoleBoundary& hole, Scalarm refinementFactor);
 
 	void computeBoundaryInfo(CMeshO& m, HoleBoundary& hole);
 
 	void diffuseNormalField(PatchMesh& patch, int iterations, Scalarm lambda);
 
-	void displaceVertices(PatchMesh& patch, const HoleBoundary& hole);
+	void displaceVertices(PatchMesh& patch, const HoleBoundary& hole, Scalarm curvatureStrength);
 
 	void smoothPatch(PatchMesh& patch, int iterations);
 

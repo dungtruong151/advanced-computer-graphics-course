@@ -161,6 +161,17 @@ RichParameterList FilterNFDHoleFillPlugin::initParameterList(const QAction* acti
 		parlst.addParam(RichInt("SmoothingIterations", 3,
 			"Smoothing Iterations",
 			"Number of Laplacian smoothing iterations applied to the filled patch."));
+		parlst.addParam(RichFloat("RefinementFactor", 1.0f,
+			"Refinement Factor",
+			"Target triangle edge length as a multiple of the average boundary edge. "
+			"Smaller = finer (more detail), larger = coarser. "
+			"1.0 = match boundary density, 0.5 = ~4x finer, 2.0 = coarser."));
+		parlst.addParam(RichFloat("CurvatureStrength", 1.0f,
+			"Curvature Strength",
+			"Multiplier on the dome height. "
+			"0.0 = flat patch (no bending), 1.0 = full spherical-cap fit, "
+			"2.0 = exaggerated. Lower this if the patch overshoots on non-spherical "
+			"objects (e.g. bunny, torus)."));
 		break;
 	default: assert(0);
 	}
@@ -186,6 +197,10 @@ std::map<std::string, QVariant> FilterNFDHoleFillPlugin::applyFilter(
 		int diffIterations   = parameters.getInt("DiffusionIterations");
 		Scalarm diffLambda   = parameters.getFloat("DiffusionLambda");
 		int smoothIterations = parameters.getInt("SmoothingIterations");
+		Scalarm refinementFactor = parameters.getFloat("RefinementFactor");
+		if (refinementFactor < (Scalarm)0.1) refinementFactor = (Scalarm)0.1;
+		Scalarm curvatureStrength = parameters.getFloat("CurvatureStrength");
+		if (curvatureStrength < (Scalarm)0) curvatureStrength = (Scalarm)0;
 
 		// Step 0: Enable Ocf optional components and update topology
 		cb(0, "Updating topology...");
@@ -220,7 +235,7 @@ std::map<std::string, QVariant> FilterNFDHoleFillPlugin::applyFilter(
 			computeBoundaryInfo(m, holes[hi]);
 
 			// Step 3: Initial triangulation (ear clipping + interior vertex refinement)
-			PatchMesh patch = triangulatePatch(holes[hi]);
+			PatchMesh patch = triangulatePatch(holes[hi], refinementFactor);
 
 			if (patch.faces.empty()) {
 				log("NFD:   WARNING: empty patch, skipping hole %d.", hi+1);
@@ -264,11 +279,13 @@ std::map<std::string, QVariant> FilterNFDHoleFillPlugin::applyFilter(
 					patch.normals[vi] = avgN;
 			}
 
-			// Step 5: Curvature-guided displacement (geodesic distance)
-			displaceVertices(patch, holes[hi]);
-
-			// Step 6: Laplacian smoothing with boundary fixed
+			// Step 5: Laplacian smoothing of the still-flat patch to redistribute
+			//         interior vertices evenly before bending
 			smoothPatch(patch, smoothIterations);
+
+			// Step 6: Curvature-guided displacement (final — must come after smoothing,
+			//         otherwise uniform Laplacian averages out the dome)
+			displaceVertices(patch, holes[hi], curvatureStrength);
 
 			// Step 7: Merge patch into mesh
 			mergePatchIntoMesh(m, patch, holes[hi]);
@@ -328,6 +345,10 @@ FilterNFDHoleFillPlugin::detectHoles(CMeshO& m, int maxHoleSize)
 
 					size_t prevV = curV;
 					curV = nextV;
+					if (curV == startV) {
+						loopComplete = true;
+						break;
+					}
 					bool foundNext = false;
 
 					CMeshO::VertexPointer vp = &m.vert[curV];
@@ -346,10 +367,7 @@ FilterNFDHoleFillPlugin::detectHoles(CMeshO& m, int maxHoleSize)
 						if (foundNext) break;
 					}
 
-					if (!foundNext || nextV == startV) {
-						if (nextV == startV) loopComplete = true;
-						break;
-					}
+					if (!foundNext) break;
 				}
 
 				if (loopComplete && (int)hole.vertexIndices.size() >= 3 &&
@@ -440,7 +458,7 @@ void FilterNFDHoleFillPlugin::computeBoundaryInfo(CMeshO& m, HoleBoundary& hole)
 // ===================================================================
 
 FilterNFDHoleFillPlugin::PatchMesh
-FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole)
+FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole, Scalarm refinementFactor)
 {
 	PatchMesh patch;
 	size_t n = hole.vertexIndices.size();
@@ -498,9 +516,34 @@ FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole)
 	std::vector<int> poly(n);
 	for (int i = 0; i < (int)n; i++) poly[i] = i;
 
+	// Minimum interior angle of triangle (a,b,c) in 2D — used to pick the
+	// "best" ear (most equilateral) and avoid fan-from-single-pivot artifacts.
+	auto triMinAngle2D = [](double ax, double ay, double bx, double by,
+	                        double cx, double cy) -> double {
+		double lab = std::sqrt((bx-ax)*(bx-ax) + (by-ay)*(by-ay));
+		double lbc = std::sqrt((cx-bx)*(cx-bx) + (cy-by)*(cy-by));
+		double lca = std::sqrt((ax-cx)*(ax-cx) + (ay-cy)*(ay-cy));
+		if (lab < 1e-12 || lbc < 1e-12 || lca < 1e-12) return 0.0;
+		double cosA = ((bx-ax)*(cx-ax) + (by-ay)*(cy-ay)) / (lab * lca);
+		double cosB = ((ax-bx)*(cx-bx) + (ay-by)*(cy-by)) / (lab * lbc);
+		double cosC = ((ax-cx)*(bx-cx) + (ay-cy)*(by-cy)) / (lca * lbc);
+		cosA = std::max(-1.0, std::min(1.0, cosA));
+		cosB = std::max(-1.0, std::min(1.0, cosB));
+		cosC = std::max(-1.0, std::min(1.0, cosC));
+		double angA = std::acos(cosA);
+		double angB = std::acos(cosB);
+		double angC = std::acos(cosC);
+		return std::min({angA, angB, angC});
+	};
+
 	while (poly.size() > 3) {
 		int m = (int)poly.size();
 		bool found = false;
+
+		// Scan ALL ears, pick the one with the largest minimum angle
+		// (most equilateral, avoids thin sliver fan patterns).
+		int    bestI        = -1;
+		double bestMinAngle = -1.0;
 
 		for (int i = 0; i < m; i++) {
 			int pa = poly[(i - 1 + m) % m];
@@ -511,7 +554,7 @@ FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole)
 			double bx = opx[pb], by = opy[pb];
 			double cx = opx[pc], cy = opy[pc];
 
-			// CCW convexity check: cross(curr-prev, next-prev) > 0
+			// CCW convexity check
 			if (cross2D(bx - ax, by - ay, cx - ax, cy - ay) <= 1e-12)
 				continue;
 
@@ -524,14 +567,24 @@ FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole)
 				                      ax, ay, bx, by, cx, cy))
 					isEar = false;
 			}
+			if (!isEar) continue;
 
-			if (isEar) {
-				patch.faces.push_back(
-				    vcg::Point3i(vertOrder[pa], vertOrder[pb], vertOrder[pc]));
-				poly.erase(poly.begin() + i);
-				found = true;
-				break;
+			double minAng = triMinAngle2D(ax, ay, bx, by, cx, cy);
+			if (minAng > bestMinAngle) {
+				bestMinAngle = minAng;
+				bestI        = i;
 			}
+		}
+
+		if (bestI >= 0) {
+			int m2 = (int)poly.size();
+			int pa = poly[(bestI - 1 + m2) % m2];
+			int pb = poly[bestI];
+			int pc = poly[(bestI + 1) % m2];
+			patch.faces.push_back(
+			    vcg::Point3i(vertOrder[pa], vertOrder[pb], vertOrder[pc]));
+			poly.erase(poly.begin() + bestI);
+			found = true;
 		}
 
 		if (!found) {
@@ -577,35 +630,187 @@ FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole)
 		}
 	}
 
-	// ---- Refine large triangles by inserting centroid as interior vertex ----
+	// ---- Delaunay-like edge flipping (max-min-angle quality improvement) ----
+	// Ear clipping only guarantees a valid triangulation, not an optimal one.
+	// For each interior edge shared by two triangles P=(u,v,w) and Q=(v,u,x),
+	// consider flipping to diagonal (w,x): P'=(u,x,w), Q'=(v,w,x). Accept the
+	// flip if it increases the minimum interior angle across the two faces.
+	// Iterate until no flip improves quality.
+	auto triMinAngle3D = [&](int ai, int bi, int ci) -> double {
+		Point3m A = patch.vertices[ai], B = patch.vertices[bi], C = patch.vertices[ci];
+		double lab = (double)(B - A).Norm();
+		double lac = (double)(C - A).Norm();
+		double lbc = (double)(C - B).Norm();
+		if (lab < 1e-12 || lac < 1e-12 || lbc < 1e-12) return 0.0;
+		double cosA = (double)((B - A) * (C - A)) / (lab * lac);
+		double cosB = (double)((A - B) * (C - B)) / (lab * lbc);
+		double cosC = (double)((A - C) * (B - C)) / (lac * lbc);
+		cosA = std::max(-1.0, std::min(1.0, cosA));
+		cosB = std::max(-1.0, std::min(1.0, cosB));
+		cosC = std::max(-1.0, std::min(1.0, cosC));
+		return std::min({std::acos(cosA), std::acos(cosB), std::acos(cosC)});
+	};
+
+	auto edgeKey = [](int a, int b) {
+		return std::make_pair(std::min(a, b), std::max(a, b));
+	};
+
+	for (int flipPass = 0; flipPass < 10; flipPass++) {
+		std::map<std::pair<int, int>, std::vector<int>> edgeFaces;
+		for (int fi = 0; fi < (int)patch.faces.size(); fi++) {
+			const auto& f = patch.faces[fi];
+			for (int k = 0; k < 3; k++)
+				edgeFaces[edgeKey(f[k], f[(k + 1) % 3])].push_back(fi);
+		}
+
+		bool          anyFlip = false;
+		std::set<int> touched;
+		for (auto& kv : edgeFaces) {
+			auto& faces = kv.second;
+			if (faces.size() != 2) continue;  // boundary or non-manifold
+			int f1 = faces[0], f2 = faces[1];
+			if (touched.count(f1) || touched.count(f2)) continue;
+
+			int u = kv.first.first, v = kv.first.second;
+			const auto& t1 = patch.faces[f1];
+			const auto& t2 = patch.faces[f2];
+			int w = -1, x = -1;
+			for (int k = 0; k < 3; k++) {
+				if (t1[k] != u && t1[k] != v) w = t1[k];
+				if (t2[k] != u && t2[k] != v) x = t2[k];
+			}
+			if (w < 0 || x < 0 || w == x) continue;
+
+			// Skip if new diagonal would connect two already-adjacent verts
+			if (edgeFaces.count(edgeKey(w, x))) continue;
+
+			double currMin = std::min(triMinAngle3D(u, v, w),
+			                          triMinAngle3D(v, u, x));
+			double flipMin = std::min(triMinAngle3D(u, x, w),
+			                          triMinAngle3D(v, w, x));
+
+			if (flipMin <= currMin + 1e-6) continue;
+
+			// Build new faces and auto-fix winding against avgNormal
+			// (the flipped vertex set is correct; only ordering may need a swap).
+			vcg::Point3i nf1(u, x, w), nf2(v, w, x);
+			auto fixWinding = [&](vcg::Point3i& f) {
+				Point3m N = (patch.vertices[f[1]] - patch.vertices[f[0]]) ^
+				            (patch.vertices[f[2]] - patch.vertices[f[0]]);
+				if (N * avgNormal < 0) std::swap(f[1], f[2]);
+			};
+			fixWinding(nf1);
+			fixWinding(nf2);
+
+			patch.faces[f1] = nf1;
+			patch.faces[f2] = nf2;
+			touched.insert(f1);
+			touched.insert(f2);
+			anyFlip = true;
+		}
+		if (!anyFlip) break;
+	}
+
+	// ---- Iterative centroid refinement to reach target triangle size ----
 	auto triArea3D = [&](const vcg::Point3i& f) -> double {
 		Point3m AB = patch.vertices[f[1]] - patch.vertices[f[0]];
 		Point3m AC = patch.vertices[f[2]] - patch.vertices[f[0]];
 		return (double)(AB ^ AC).Norm() * 0.5;
 	};
 
-	double avgArea = 0;
-	for (auto& f : patch.faces) avgArea += triArea3D(f);
-	if (!patch.faces.empty()) avgArea /= (double)patch.faces.size();
+	// Target triangle area = equilateral triangle with side = refinementFactor * avgBoundaryEdge
+	double avgBdEdge = 0;
+	for (size_t i = 0; i < n; i++) {
+		Point3m a = hole.positions[i];
+		Point3m b = hole.positions[(i + 1) % n];
+		avgBdEdge += (double)(b - a).Norm();
+	}
+	if (n > 0) avgBdEdge /= (double)n;
 
-	if (avgArea > 0) {
-		std::vector<vcg::Point3i> newFaces;
-		for (auto& f : patch.faces) {
-			if (triArea3D(f) > avgArea * 1.5) {
-				// Insert triangle centroid as a new interior vertex
-				Point3m c = (patch.vertices[f[0]] + patch.vertices[f[1]] +
-				             patch.vertices[f[2]]) / (Scalarm)3.0;
-				int cIdx = (int)patch.vertices.size();
-				patch.vertices.push_back(c);
-				patch.isBoundary.push_back(false);
-				newFaces.push_back(vcg::Point3i(f[0], f[1], cIdx));
-				newFaces.push_back(vcg::Point3i(f[1], f[2], cIdx));
-				newFaces.push_back(vcg::Point3i(f[2], f[0], cIdx));
-			} else {
-				newFaces.push_back(f);
+	double targetSide = avgBdEdge * (double)refinementFactor;
+	double targetArea = (targetSide * targetSide) * 0.4330127;  // sqrt(3)/4
+
+	const int maxPasses = 8;
+	const size_t hardCapFaces = 200000;
+	if (targetArea > 0) {
+		for (int pass = 0; pass < maxPasses; pass++) {
+			if (patch.faces.size() > hardCapFaces) break;
+			std::vector<vcg::Point3i> newFaces;
+			newFaces.reserve(patch.faces.size());
+			bool anySplit = false;
+			for (auto& f : patch.faces) {
+				double a = triArea3D(f);
+				if (a > targetArea * 1.5) {
+					Point3m c = (patch.vertices[f[0]] + patch.vertices[f[1]] +
+					             patch.vertices[f[2]]) / (Scalarm)3.0;
+					int cIdx = (int)patch.vertices.size();
+					patch.vertices.push_back(c);
+					patch.isBoundary.push_back(false);
+					newFaces.push_back(vcg::Point3i(f[0], f[1], cIdx));
+					newFaces.push_back(vcg::Point3i(f[1], f[2], cIdx));
+					newFaces.push_back(vcg::Point3i(f[2], f[0], cIdx));
+					anySplit = true;
+				} else {
+					newFaces.push_back(f);
+				}
 			}
+			patch.faces = newFaces;
+			if (!anySplit) break;
 		}
-		patch.faces = newFaces;
+	}
+
+	// ---- Second Delaunay-like edge-flip pass after refinement ----
+	// Centroid subdivision can introduce new slivers around the inserted
+	// interior vertex; clean them up the same way.
+	for (int flipPass = 0; flipPass < 10; flipPass++) {
+		std::map<std::pair<int, int>, std::vector<int>> edgeFaces;
+		for (int fi = 0; fi < (int)patch.faces.size(); fi++) {
+			const auto& f = patch.faces[fi];
+			for (int k = 0; k < 3; k++)
+				edgeFaces[edgeKey(f[k], f[(k + 1) % 3])].push_back(fi);
+		}
+
+		bool          anyFlip = false;
+		std::set<int> touched;
+		for (auto& kv : edgeFaces) {
+			auto& faces = kv.second;
+			if (faces.size() != 2) continue;
+			int f1 = faces[0], f2 = faces[1];
+			if (touched.count(f1) || touched.count(f2)) continue;
+
+			int u = kv.first.first, v = kv.first.second;
+			const auto& t1 = patch.faces[f1];
+			const auto& t2 = patch.faces[f2];
+			int w = -1, x = -1;
+			for (int k = 0; k < 3; k++) {
+				if (t1[k] != u && t1[k] != v) w = t1[k];
+				if (t2[k] != u && t2[k] != v) x = t2[k];
+			}
+			if (w < 0 || x < 0 || w == x) continue;
+			if (edgeFaces.count(edgeKey(w, x))) continue;
+
+			double currMin = std::min(triMinAngle3D(u, v, w),
+			                          triMinAngle3D(v, u, x));
+			double flipMin = std::min(triMinAngle3D(u, x, w),
+			                          triMinAngle3D(v, w, x));
+			if (flipMin <= currMin + 1e-6) continue;
+
+			vcg::Point3i nf1(u, x, w), nf2(v, w, x);
+			auto fixWinding2 = [&](vcg::Point3i& f) {
+				Point3m N = (patch.vertices[f[1]] - patch.vertices[f[0]]) ^
+				            (patch.vertices[f[2]] - patch.vertices[f[0]]);
+				if (N * avgNormal < 0) std::swap(f[1], f[2]);
+			};
+			fixWinding2(nf1);
+			fixWinding2(nf2);
+
+			patch.faces[f1] = nf1;
+			patch.faces[f2] = nf2;
+			touched.insert(f1);
+			touched.insert(f2);
+			anyFlip = true;
+		}
+		if (!anyFlip) break;
 	}
 
 	// Initialize normals: copy boundary normals; interior = avgNormal
@@ -764,26 +969,48 @@ void FilterNFDHoleFillPlugin::diffuseNormalField(PatchMesh& patch, int iteration
 // g(t) = 4*t*(1-t)  peaks at t=0.5
 // ===================================================================
 
-void FilterNFDHoleFillPlugin::displaceVertices(PatchMesh& patch, const HoleBoundary& hole)
+void FilterNFDHoleFillPlugin::displaceVertices(PatchMesh& patch, const HoleBoundary& hole, Scalarm curvatureStrength)
 {
 	size_t nBoundary = patch.numBoundaryVerts;
 	size_t nVerts    = patch.vertices.size();
 
-	// Average mean curvature from boundary vertices
-	Scalarm H_avg = 0;
+	if (curvatureStrength <= (Scalarm)0) return;  // 0 = flat patch, skip displacement entirely
+
+	// Geometry-based scale: treat the hole as a spherical cap whose boundary
+	// lies on a small circle. Cap height h = r * tan(theta/2), where
+	//   r     = mean boundary radius (distance from centroid to boundary)
+	//   theta = max angle between any boundary normal and the average normal
+	// This gives a correct dome height regardless of mesh density, and falls
+	// to zero on flat patches (all boundary normals parallel).
+	Point3m centroid(0, 0, 0);
 	for (size_t i = 0; i < nBoundary; i++)
-		H_avg += (Scalarm)hole.meanCurvatures[i];
-	H_avg /= (Scalarm)nBoundary;
+		centroid += hole.positions[i];
+	if (nBoundary > 0) centroid /= (Scalarm)nBoundary;
 
-	// Average boundary edge length (scale reference)
-	Scalarm avgEdgeLen = 0;
+	Scalarm holeRadius = 0;
+	for (size_t i = 0; i < nBoundary; i++)
+		holeRadius += (hole.positions[i] - centroid).Norm();
+	if (nBoundary > 0) holeRadius /= (Scalarm)nBoundary;
+
+	Point3m avgN(0, 0, 0);
+	for (size_t i = 0; i < nBoundary; i++)
+		avgN += hole.normals[i];
+	Scalarm alen = avgN.Norm();
+	if (alen > (Scalarm)1e-10) avgN /= alen;
+
+	// Use AVERAGE angle instead of max — robust on non-spherical objects
+	// (bunny, torus) where a few boundary normals may deviate wildly and
+	// make max-angle a poor estimate of "how domed" the patch should be.
+	Scalarm sumDot = (Scalarm)0;
 	for (size_t i = 0; i < nBoundary; i++) {
-		size_t j = (i + 1) % nBoundary;
-		avgEdgeLen += (hole.positions[i] - hole.positions[j]).Norm();
+		Scalarm d = hole.normals[i] * avgN;
+		sumDot += d;
 	}
-	avgEdgeLen /= (Scalarm)nBoundary;
-
-	Scalarm scale = H_avg * avgEdgeLen;
+	Scalarm avgDot = (nBoundary > 0) ? (sumDot / (Scalarm)nBoundary) : (Scalarm)1;
+	if (avgDot < (Scalarm)-1) avgDot = (Scalarm)-1;
+	if (avgDot > (Scalarm) 1) avgDot = (Scalarm) 1;
+	double  theta = std::acos((double)avgDot);
+	Scalarm scale = holeRadius * (Scalarm)std::tan(theta * 0.5) * curvatureStrength;
 
 	// Build adjacency with edge lengths for Dijkstra
 	std::vector<std::vector<std::pair<size_t, Scalarm>>> adj(nVerts);
@@ -835,14 +1062,53 @@ void FilterNFDHoleFillPlugin::displaceVertices(PatchMesh& patch, const HoleBound
 	for (size_t i = nBoundary; i < nVerts; i++) {
 		if (dist[i] >= INF) continue;
 
-		// Normalized geodesic distance: 0 at boundary, 1 at farthest point
+		// Normalized geodesic distance: 0 at boundary, 1 at farthest (= center)
 		Scalarm t = dist[i] / maxDist;
 		if (t > (Scalarm)1.0) t = (Scalarm)1.0;
 
-		// Bell-shaped weight: g(t) = 4*t*(1-t), peak = 1 at t = 0.5
-		Scalarm weight = (Scalarm)4.0 * t * ((Scalarm)1.0 - t);
+		// Spherical-cap profile: weight(t) = sqrt(2t - t^2)
+		// This is the height of a unit circle at horizontal offset (1-t),
+		// so the patch follows a perfect cap shape: peak = 1 at t = 1 (center),
+		// 0 at t = 0 (boundary), smooth tangent at boundary.
+		Scalarm s = (Scalarm)2.0 * t - t * t;
+		if (s < 0) s = 0;
+		Scalarm weight = (Scalarm)std::sqrt((double)s);
 
 		patch.vertices[i] += patch.normals[i] * (scale * weight);
+	}
+
+	// ---- Post-displacement damped Laplacian (Taubin-style) ----
+	// Alternating shrink (positive step) / inflate (negative step) to remove
+	// per-vertex spikes caused by irregular subdivision while preserving the
+	// overall dome volume.
+	std::vector<std::set<size_t>> padj(nVerts);
+	for (const auto& f : patch.faces) {
+		padj[f[0]].insert(f[1]); padj[f[0]].insert(f[2]);
+		padj[f[1]].insert(f[0]); padj[f[1]].insert(f[2]);
+		padj[f[2]].insert(f[0]); padj[f[2]].insert(f[1]);
+	}
+
+	// Taubin (lambda, mu): lambda positive (shrink), mu negative (inflate)
+	// with |mu| > |lambda| to keep low-frequency shape (the dome).
+	const int      taubinPairs = 3;
+	const Scalarm  lambdaT     = (Scalarm) 0.40;
+	const Scalarm  muT         = (Scalarm)-0.44;
+
+	auto laplacianStep = [&](Scalarm step) {
+		std::vector<Point3m> newPos = patch.vertices;
+		for (size_t i = nBoundary; i < nVerts; i++) {
+			if (padj[i].empty()) continue;
+			Point3m avg(0, 0, 0);
+			for (size_t ni : padj[i]) avg += patch.vertices[ni];
+			avg /= (Scalarm)padj[i].size();
+			newPos[i] = patch.vertices[i] + (avg - patch.vertices[i]) * step;
+		}
+		patch.vertices = newPos;
+	};
+
+	for (int p = 0; p < taubinPairs; p++) {
+		laplacianStep(lambdaT);
+		laplacianStep(muT);
 	}
 }
 
