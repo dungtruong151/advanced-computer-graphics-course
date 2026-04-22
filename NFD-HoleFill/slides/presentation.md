@@ -200,29 +200,17 @@ where
 
 ---
 
-## 7. Delaunay Edge Flipping — Triangulation Quality
+## 7. Delaunay Edge Flipping
 
-**The slivers problem.** Ear clipping + centroid subdivision give a *valid* but not *optimal* triangulation — junction vertices end up surrounded by thin **sliver triangles**.
+- Ear clipping + centroid subdivision leave **sliver triangles**.
+- **Max-min-angle flip:** swap the shared diagonal whenever it increases the minimum interior angle of the two triangles.
+- Matters for NFD because $\cot\alpha + \cot\beta$ blows up on slivers → ill-conditioned Laplacian.
 
-**Max-min-angle criterion** (classic Delaunay, in 3D here):
-for every interior edge $u\!-\!v$ shared by two triangles $(u,v,w)$ and $(v,u,x)$, flip the diagonal $u\!-\!v \to w\!-\!x$ iff the minimum interior angle across the two faces **increases**. Iterate to a fixed point. Run twice — once after ear clipping, once after centroid refinement.
+![width:440px](delaunay_off.png) ![width:440px](delaunay_on.png)
 
-**Why NFD needs this.** The cotangent weight $w = \cot\alpha + \cot\beta$ *blows up* on slivers → cotangent Laplacian becomes ill-conditioned → `SimplicialLDLT` diffusion solver is unstable. Removing slivers makes Step 4 numerically well-behaved.
+<div class="small" style="text-align:center;">
 
-<div class="small">
-
-**Gotcha we hit.** Our first flip implementation tested winding with
-`(AB × AC) · avgNormal < 0`. This breaks on curved meshes (bunny, torus)
-because `avgNormal` — the mean of all boundary normals — is a poor
-reference for a triangle sitting on a steeply curved region. The fix was
-combinatorial: derive winding directly from the input face's CCW vertex
-order (*does v follow u in t1?* → Case A, else Case B), no normals
-involved. A nice class takeaway: **combinatorial invariants beat
-floating-point guesses when you can get them.**
-
-The filter has a `UseDelaunayFlipping` toggle so you can run NFD with
-the flips disabled and visually compare against the default on your
-own mesh.
+**Left:** `UseDelaunayFlipping = false` &nbsp;|&nbsp; **Right:** `UseDelaunayFlipping = true`
 
 </div>
 
