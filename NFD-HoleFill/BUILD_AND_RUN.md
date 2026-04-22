@@ -119,7 +119,7 @@ Every test case in `NFD-HoleFill/data/input/` comes as a **pair**:
 | `cylinder_side`| Cylinder, hole on the side | 82 | 155 | 1 |
 | `torus`        | Torus, 1 hole at outer edge | 640 | 1,274 | 1 |
 | `bunny`        | Stanford Bunny, hole at top | 34,834 | 69,427 | 6 |
-| `spot`         | Cow (watertight Spot substitute) | 2,903 | 5,774 | 1 |
+| `cow`          | Watertight cow (second non-sphere model) | 2,903 | 5,774 | 1 |
 
 To regenerate: `python data/generate_test_meshes.py`
 (requires `trimesh`, `numpy`; also auto-downloads `stanford-bunny.obj` and

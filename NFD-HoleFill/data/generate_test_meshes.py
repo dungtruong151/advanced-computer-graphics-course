@@ -214,18 +214,18 @@ def _try_download(urls, cache_path, label):
     return None
 
 
-def try_fetch_spot():
-    """Stanford/Keenan-Crane Spot. The distributed Spot has intentional
-    openings (eyes, nostrils, mouth, hooves) that are hard to seal cleanly,
-    so we fall back to the watertight `cow.obj` from the same repository —
-    a simpler cow model that plays the same role as a non-sphere test case.
+def try_fetch_cow():
+    """Watertight cow.obj from alecjacobson/common-3d-test-models. Used as
+    the second Stanford-style test model in place of Keenan Crane's Spot,
+    which has intentional openings (eyes, nostrils, mouth, hooves) that
+    are hard to seal cleanly.
     """
     return _try_download(
         [
             "https://raw.githubusercontent.com/alecjacobson/common-3d-test-models/master/data/cow.obj",
         ],
         os.path.join(OUTPUT_DIR, "_cow.obj"),
-        "cow (Spot substitute)")
+        "cow")
 
 
 def try_fetch_bunny():
@@ -289,19 +289,19 @@ if bunny is not None:
 else:
     print("  Bunny skipped (download failed and no local bunny.obj).")
 
-# ── 7. Stanford-style second test model (cow.obj as Spot substitute) ─────
-print("7. Cow (Spot substitute) - hole")
-spot = try_fetch_spot()
-if spot is not None:
-    bcount = int((np.unique(spot.edges_sorted, axis=0, return_counts=True)[1] == 1).sum())
+# ── 7. Cow (watertight, second non-sphere test model) ────────────────────
+print("7. Cow - hole")
+cow = try_fetch_cow()
+if cow is not None:
+    bcount = int((np.unique(cow.edges_sorted, axis=0, return_counts=True)[1] == 1).sum())
     print(f"  pre-existing boundary edges: {bcount}")
     if bcount > 0:
-        spot = seal_all_holes(spot)
-        bcount = int((np.unique(spot.edges_sorted, axis=0, return_counts=True)[1] == 1).sum())
+        cow = seal_all_holes(cow)
+        bcount = int((np.unique(cow.edges_sorted, axis=0, return_counts=True)[1] == 1).sum())
         print(f"  after sealing: {bcount}")
-    top_spot = int(np.argmax(spot.vertices[:, 1]))
-    save_pair(spot,
-              remove_faces_around_vertex(spot, top_spot, radius_faces=2),
-              "spot")
+    top_cow = int(np.argmax(cow.vertices[:, 1]))
+    save_pair(cow,
+              remove_faces_around_vertex(cow, top_cow, radius_faces=2),
+              "cow")
 
 print("\nDone. Files saved to:", OUTPUT_DIR)
