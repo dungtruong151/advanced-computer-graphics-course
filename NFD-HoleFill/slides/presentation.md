@@ -319,20 +319,7 @@ Measured with **MeshLab's built-in Hausdorff Distance** filter (both directions)
 
 ---
 
-## 12. Observations
-
-- **Sphere:** error scales roughly with hole size — expected for a smoothly curved surface.
-- **Torus:** patch hugs the true surface (forward RMS 0.001 %); reverse distance is density-limited, tunable via `RefinementFactor`.
-- **Bunny:** 3.5 % Hausdorff is a *single-point peak* on the sharpest ear; mean / RMS stay at 0.02 % / 0.18 % — overall quality is high.
-- **Cow:** reverse direction dominates → patch is slightly smaller than the removed region; resolvable by increasing `CurvatureStrength` or reducing `RefinementFactor`.
-
-**Two bugs found and fixed during testing:**
-- Winding flips on curved meshes (Delaunay edge-flip used an unreliable `avgNormal`).
-- New patch triangles rendered as default white instead of inheriting boundary colour.
-
----
-
-## 13. Conclusion
+## 12. Conclusion
 
 **What NFD delivers**
 - Sub-1 % forward RMS on every tested model
@@ -352,15 +339,12 @@ Measured with **MeshLab's built-in Hausdorff Distance** filter (both directions)
 ---
 
 <!-- _class: lead -->
+<!-- _paginate: false -->
 
-# Thank you
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:30px;">
 
-**Q & A**
+<h1 style="font-size:120px;margin:0;">Thank you</h1>
 
-<br>
+<div style="font-size:72px;font-weight:600;color:#0b5cab;">Q &amp; A</div>
 
-<span class="small">
-Source: <code>NFD-HoleFill/plugin/filter_nfd_holefill.cpp</code><br>
-Build/run: <code>NFD-HoleFill/BUILD_AND_RUN.md</code><br>
-Full results: <code>NFD-HoleFill/evaluation_results.md</code>
-</span>
+</div>
