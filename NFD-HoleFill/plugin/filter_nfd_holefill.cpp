@@ -138,7 +138,8 @@ int FilterNFDHoleFillPlugin::getPreConditions(const QAction*) const
 
 int FilterNFDHoleFillPlugin::postCondition(const QAction*) const
 {
-	return MeshModel::MM_VERTCOORD | MeshModel::MM_FACENORMAL | MeshModel::MM_VERTNORMAL;
+	return MeshModel::MM_VERTCOORD | MeshModel::MM_FACENORMAL | MeshModel::MM_VERTNORMAL
+	     | MeshModel::MM_VERTCOLOR | MeshModel::MM_FACECOLOR;
 }
 
 RichParameterList FilterNFDHoleFillPlugin::initParameterList(const QAction* action, const MeshModel& m)
@@ -691,16 +692,26 @@ FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole, Scalarm refi
 
 			if (flipMin <= currMin + 1e-6) continue;
 
-			// Build new faces and auto-fix winding against avgNormal
-			// (the flipped vertex set is correct; only ordering may need a swap).
-			vcg::Point3i nf1(u, x, w), nf2(v, w, x);
-			auto fixWinding = [&](vcg::Point3i& f) {
-				Point3m N = (patch.vertices[f[1]] - patch.vertices[f[0]]) ^
-				            (patch.vertices[f[2]] - patch.vertices[f[0]]);
-				if (N * avgNormal < 0) std::swap(f[1], f[2]);
-			};
-			fixWinding(nf1);
-			fixWinding(nf2);
+			// Derive flipped winding from t1's CCW vertex order (robust on
+			// curved patches where avgNormal is unreliable per-face).
+			// If t1 has edge u→v (i.e. v follows u cyclically): Case A
+			//   new nf_u = (u, x, w), nf_v = (v, w, x)
+			// Else t1 has edge v→u: Case B
+			//   new nf_u = (u, w, x), nf_v = (v, x, w)
+			int u1 = -1, v1 = -1;
+			for (int k = 0; k < 3; k++) {
+				if (t1[k] == u) u1 = k;
+				else if (t1[k] == v) v1 = k;
+			}
+			bool caseA = ((u1 + 1) % 3 == v1);
+			vcg::Point3i nf1, nf2;
+			if (caseA) {
+				nf1 = vcg::Point3i(u, x, w);
+				nf2 = vcg::Point3i(v, w, x);
+			} else {
+				nf1 = vcg::Point3i(u, w, x);
+				nf2 = vcg::Point3i(v, x, w);
+			}
 
 			patch.faces[f1] = nf1;
 			patch.faces[f2] = nf2;
@@ -795,14 +806,21 @@ FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole, Scalarm refi
 			                          triMinAngle3D(v, w, x));
 			if (flipMin <= currMin + 1e-6) continue;
 
-			vcg::Point3i nf1(u, x, w), nf2(v, w, x);
-			auto fixWinding2 = [&](vcg::Point3i& f) {
-				Point3m N = (patch.vertices[f[1]] - patch.vertices[f[0]]) ^
-				            (patch.vertices[f[2]] - patch.vertices[f[0]]);
-				if (N * avgNormal < 0) std::swap(f[1], f[2]);
-			};
-			fixWinding2(nf1);
-			fixWinding2(nf2);
+			// Derive flipped winding from t1's CCW vertex order (see above).
+			int u1 = -1, v1 = -1;
+			for (int k = 0; k < 3; k++) {
+				if (t1[k] == u) u1 = k;
+				else if (t1[k] == v) v1 = k;
+			}
+			bool caseA = ((u1 + 1) % 3 == v1);
+			vcg::Point3i nf1, nf2;
+			if (caseA) {
+				nf1 = vcg::Point3i(u, x, w);
+				nf2 = vcg::Point3i(v, w, x);
+			} else {
+				nf1 = vcg::Point3i(u, w, x);
+				nf2 = vcg::Point3i(v, x, w);
+			}
 
 			patch.faces[f1] = nf1;
 			patch.faces[f2] = nf2;
@@ -1151,6 +1169,24 @@ void FilterNFDHoleFillPlugin::mergePatchIntoMesh(
 {
 	size_t nBoundary = hole.vertexIndices.size();
 
+	// Inherit color from boundary so new patch triangles don't render as
+	// default-white (a visible discontinuity on colored/scanned meshes).
+	bool hasVC = vcg::tri::HasPerVertexColor(m);
+	bool hasFC = vcg::tri::HasPerFaceColor(m);
+	vcg::Color4b avgVColor(255, 255, 255, 255);
+	if (hasVC && nBoundary > 0) {
+		double sr = 0, sg = 0, sb = 0, sa = 0;
+		for (size_t i = 0; i < nBoundary; i++) {
+			const vcg::Color4b& c = m.vert[hole.vertexIndices[i]].C();
+			sr += c[0]; sg += c[1]; sb += c[2]; sa += c[3];
+		}
+		avgVColor = vcg::Color4b(
+			(unsigned char)(sr / nBoundary),
+			(unsigned char)(sg / nBoundary),
+			(unsigned char)(sb / nBoundary),
+			(unsigned char)(sa / nBoundary));
+	}
+
 	std::vector<size_t> vertMap(patch.vertices.size());
 	for (size_t i = 0; i < nBoundary; i++)
 		vertMap[i] = hole.vertexIndices[i];
@@ -1159,8 +1195,31 @@ void FilterNFDHoleFillPlugin::mergePatchIntoMesh(
 	for (size_t i = nBoundary; i < patch.vertices.size(); i++) {
 		vi->P() = patch.vertices[i];
 		vi->N() = patch.normals[i];
+		if (hasVC) vi->C() = avgVColor;
 		vertMap[i] = vcg::tri::Index(m, &*vi);
 		++vi;
+	}
+
+	// Average face color from faces adjacent to the boundary (fallback: avg vertex color)
+	vcg::Color4b avgFColor = avgVColor;
+	if (hasFC) {
+		double sr = 0, sg = 0, sb = 0, sa = 0;
+		int    cnt = 0;
+		for (size_t i = 0; i < nBoundary; i++) {
+			CMeshO::VertexPointer vp = &m.vert[hole.vertexIndices[i]];
+			vcg::face::VFIterator<CMeshO::FaceType> vfi(vp);
+			for (; !vfi.End(); ++vfi) {
+				const vcg::Color4b& c = vfi.F()->C();
+				sr += c[0]; sg += c[1]; sb += c[2]; sa += c[3];
+				cnt++;
+			}
+		}
+		if (cnt > 0)
+			avgFColor = vcg::Color4b(
+				(unsigned char)(sr / cnt),
+				(unsigned char)(sg / cnt),
+				(unsigned char)(sb / cnt),
+				(unsigned char)(sa / cnt));
 	}
 
 	auto fi = vcg::tri::Allocator<CMeshO>::AddFaces(m, (int)patch.faces.size());
@@ -1168,6 +1227,7 @@ void FilterNFDHoleFillPlugin::mergePatchIntoMesh(
 		fi->V(0) = &m.vert[vertMap[patch.faces[i][0]]];
 		fi->V(1) = &m.vert[vertMap[patch.faces[i][1]]];
 		fi->V(2) = &m.vert[vertMap[patch.faces[i][2]]];
+		if (hasFC) fi->C() = avgFColor;
 		++fi;
 	}
 }

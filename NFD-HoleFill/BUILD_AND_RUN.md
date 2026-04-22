@@ -87,7 +87,7 @@ The plugin DLL is already in the correct `plugins/` folder relative to `meshlab.
 
 1. **Import mesh:** `File > Import Mesh` -- load a mesh with holes (`.ply`, `.obj`, `.stl`)
 
-2. **Open filter:** `Filters > Remeshing, Simplification and Reconstruction > NFD Hole Filling`
+2. **Open filter:** `Filters > Remeshing, Simplification and Reconstruction > NFD Hole Filling` 
 
 3. **Configure parameters:**
 
