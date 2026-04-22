@@ -283,11 +283,11 @@ where
 <div class="image-pair">
   <div class="cell">
     <img src="delaunay_off.png" alt="Delaunay flipping disabled">
-    <div class="caption"><b>Without Delaunay flipping</b><br>raw ear-clipping + centroid subdivision — sliver triangles visible</div>
+    <div class="caption"><b>Without Delaunay flipping</b></div>
   </div>
   <div class="cell">
     <img src="delaunay_on.png" alt="Delaunay flipping enabled">
-    <div class="caption"><b>With Delaunay flipping</b><br>two max-min-angle passes — well-shaped triangles</div>
+    <div class="caption"><b>With Delaunay flipping</b></div>
   </div>
 </div>
 
@@ -333,11 +333,11 @@ UI entry: `Filters > Remeshing... > NFD Hole Filling`.
 <div class="image-pair">
   <div class="cell">
     <img src="result_before.png" alt="Mesh with hole, before NFD">
-    <div class="caption"><b>Before</b><br>input mesh with a hole on the surface</div>
+    <div class="caption"><b>Before</b></div>
   </div>
   <div class="cell">
     <img src="result_after.png" alt="Mesh after NFD hole filling">
-    <div class="caption"><b>After NFD hole filling</b><br>patch follows surrounding curvature, blends smoothly with the boundary</div>
+    <div class="caption"><b>After NFD hole filling</b></div>
   </div>
 </div>
 
