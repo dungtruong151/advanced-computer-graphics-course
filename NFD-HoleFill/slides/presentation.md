@@ -122,6 +122,40 @@ style: |
     line-height: 1;
     margin: -2px 0;
   }
+  .image-pair {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    margin-top: 8px;
+    width: 100%;
+  }
+  .image-pair .cell {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .image-pair .cell img {
+    width: 100%;
+    max-height: 440px;
+    object-fit: contain;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  }
+  .image-pair .cell .caption {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #0f172a;
+    text-align: center;
+    line-height: 1.35;
+  }
+  .image-pair .cell .caption b {
+    color: #0b5cab;
+  }
 ---
 
 <!-- _class: lead -->
@@ -246,12 +280,15 @@ where
 - **Max-min-angle flip:** swap the shared diagonal whenever it increases the minimum interior angle of the two triangles.
 - Matters for NFD because $\cot\alpha + \cot\beta$ blows up on slivers → ill-conditioned Laplacian.
 
-![width:440px](delaunay_off.png) ![width:440px](delaunay_on.png)
-
-<div class="small" style="text-align:center;">
-
-**Left:** `UseDelaunayFlipping = false` &nbsp;|&nbsp; **Right:** `UseDelaunayFlipping = true`
-
+<div class="image-pair">
+  <div class="cell">
+    <img src="delaunay_off.png" alt="Delaunay flipping disabled">
+    <div class="caption"><b>Without Delaunay flipping</b><br>raw ear-clipping + centroid subdivision — sliver triangles visible</div>
+  </div>
+  <div class="cell">
+    <img src="delaunay_on.png" alt="Delaunay flipping enabled">
+    <div class="caption"><b>With Delaunay flipping</b><br>two max-min-angle passes — well-shaped triangles</div>
+  </div>
 </div>
 
 ---
@@ -293,12 +330,15 @@ UI entry: `Filters > Remeshing... > NFD Hole Filling`.
 
 ## 10. Visual Results
 
-![width:440px](result_before.png) ![width:440px](result_after.png)
-
-<div class="small" style="text-align:center;">
-
-**Left:** input mesh with hole &nbsp;|&nbsp; **Right:** same mesh after NFD hole filling
-
+<div class="image-pair">
+  <div class="cell">
+    <img src="result_before.png" alt="Mesh with hole, before NFD">
+    <div class="caption"><b>Before</b><br>input mesh with a hole on the surface</div>
+  </div>
+  <div class="cell">
+    <img src="result_after.png" alt="Mesh after NFD hole filling">
+    <div class="caption"><b>After NFD hole filling</b><br>patch follows surrounding curvature, blends smoothly with the boundary</div>
+  </div>
 </div>
 
 ---
