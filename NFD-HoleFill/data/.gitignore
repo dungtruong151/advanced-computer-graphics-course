@@ -2,8 +2,5 @@
 input/_*.obj
 input/_*.mtl
 
-# NFD-filled outputs (produced by user running MeshLab + evaluate.py)
+# NFD-filled outputs exported from MeshLab for evaluation
 input/*_filled.ply
-
-# Batch evaluation output
-evaluation_results.md

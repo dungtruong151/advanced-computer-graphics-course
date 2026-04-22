@@ -131,38 +131,50 @@ Start with `sphere_small_hole.ply` for the simplest test case.
 
 ## Evaluation
 
-The proposal asks for three quantitative metrics:
+The proposal asks for three quantitative metrics: **Hausdorff Distance**,
+**RMS Error**, and **Normal Deviation**. MeshLab ships a ready-made
+`Hausdorff Distance` sampling filter that reports the first two directly,
+so evaluation is done inside MeshLab — no extra scripts needed.
 
-1. **Hausdorff Distance** — symmetric max closest-point distance
-2. **RMS Error** — root-mean-square of closest-point distances
-3. **Normal Deviation** — mean angular difference between filled and GT face normals
+Workflow:
 
-Evaluation workflow:
+1. **Prepare GT/hole pairs** (only once):
+   ```bash
+   cd NFD-HoleFill/data
+   python generate_test_meshes.py
+   ```
+   This writes `<name>_gt.ply` and `<name>_hole.ply` pairs to `data/input/`.
 
-```bash
-# 1. Regenerate ground-truth / hole pairs (only needed once)
-cd NFD-HoleFill/data
-python generate_test_meshes.py
+2. **Fill the hole with NFD** (per test case):
+   - `File > Import Mesh` → `<name>_hole.ply`
+   - `Filters > Remeshing, Simplification and Reconstruction > NFD Hole Filling`
+   - `File > Export Mesh As...` → save as `<name>_filled.ply`
 
-# 2. (In MeshLab) For each <name>_hole.ply:
-#    - File > Import Mesh  -> open <name>_hole.ply
-#    - Filters > Remeshing... > NFD Hole Filling > Apply
-#    - File > Export Mesh As -> save as <name>_filled.ply
-#      (same folder: NFD-HoleFill/data/input/)
+3. **Measure against ground truth** (per test case):
+   - `File > Import Mesh` → `<name>_gt.ply` (add as a second layer)
+   - `Filters > Sampling > Hausdorff Distance`
+     - *Sampled Mesh*: the filled mesh (layer 0)
+     - *Target Mesh*: the GT mesh (layer 1)
+     - Enable *Sample Vertexes*, *Sample Edges*, *Sample Faces*
+   - Read the reported **Max / Mean / RMS** distance from the log panel.
+   - Repeat with Sampled and Target swapped and take the larger of the two
+     max distances for the symmetric **Hausdorff** value.
 
-# 3. Run the batch evaluator — it picks up every pair that has a _filled.ply
-#    sibling and writes a summary table to evaluation_results.md.
-python run_evaluation.py
-```
+4. **Normal deviation** (optional third metric):
+   - After the Hausdorff filter, MeshLab attaches a per-vertex *quality*
+     value (distance). For normal deviation, use
+     `Filters > Quality Measures and Computations > Per Vertex Quality Function`
+     with an expression comparing vertex normals against the closest-point
+     normals, or just report the **max angle** between any patch face
+     normal and the GT face normal at its projected point (can be read
+     off via `Render > Show Normal` on both layers overlaid).
 
-Single-pair evaluation (for quick checks while tuning parameters):
+Record the numbers in a results table of your report:
 
-```bash
-python evaluate.py input/bunny_gt.ply input/bunny_filled.ply
-```
-
-Output includes absolute values and percentages of the bounding-box diagonal,
-so you can compare results across models of different scale.
+| Model | Hausdorff (max) | RMS | Normal dev (max) |
+|-------|-----------------|-----|------------------|
+| sphere_small | ... | ... | ... |
+| ... | ... | ... | ... |
 
 ---
 
