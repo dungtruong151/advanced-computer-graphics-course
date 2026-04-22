@@ -20,7 +20,7 @@ reported by MeshLab in the *"Values w.r.t. BBox Diag"* block).
 |--------------|----------:|-----------------:|------------:|----------:|------:|-------|
 | sphere_small | 3.464     | 4.260e-03        | 0.123 %     | 2.370e-04 | 0.007 % |  |
 | sphere_large | 3.464     | 2.055e-02        | 0.592 %     | 2.095e-03 | 0.060 % |  |
-| torus        | 7.141     | 2.447e-02        | 0.343 %     | 0.000e+00 | 0.000 % | filled == hole (NFD skipped, see note) |
+| torus        | 7.141     | 2.447e-02        | 0.343 %     | 5.600e-05 | 0.001 % | reverse-direction dominated |
 | cow          | 12.713    | 3.316e-01        | 2.609 %     | 1.443e-03 | 0.011 % | reverse direction dominates — see note |
 | bunny        | 0.251     | 8.783e-03        | 3.498 %     | 4.550e-04 | 0.181 % | six separate holes, most patch error on the sharpest one |
 
@@ -56,10 +56,10 @@ All four rows per model are verbatim from the MeshLab log.
 
 | Direction | min | max | mean | RMS |
 |-----------|----:|----:|-----:|----:|
-| filled → GT (640 samples) | 0.000000 | 0.000000 | 0.000000 | 0.000000 |
-| &nbsp;&nbsp;% bbox        | 0.0000 % | 0.0000 % | 0.0000 % | 0.0000 % |
-| GT → filled (640 samples) | 0.000000 | 0.024472 | 0.000038 | 0.000967 |
-| &nbsp;&nbsp;% bbox        | 0.0000 % | 0.3427 % | 0.0005 % | 0.0135 % |
+| filled → GT (1920 samples) | 0.000000 | 0.002460 | 0.000001 | 0.000056 |
+| &nbsp;&nbsp;% bbox         | 0.0000 % | 0.0345 % | 0.0000 % | 0.0008 % |
+| GT → filled (1920 samples) | 0.000000 | 0.024472 | 0.000020 | 0.000630 |
+| &nbsp;&nbsp;% bbox         | 0.0000 % | 0.3427 % | 0.0003 % | 0.0088 % |
 
 ### cow (BBox diag 12.713)
 
@@ -102,8 +102,9 @@ don't have an equally close counterpart on the filled mesh. The forward RMS
 is still very low (0.011 %), so the patch that was produced sits on the true
 surface; it just doesn't fully span the removed region on the long axis.
 
-**Torus.** Forward distance is zero because the filled mesh is identical to
-the hole mesh — NFD didn't add a patch. The most likely cause is that the
-hole boundary exceeded `MaxHoleSize` with its default of 100 (or the loop
-was rejected during detection). Re-running with `MaxHoleSize = 500` should
-resolve this and produce a non-trivial forward number.
+**Torus.** Forward error is essentially zero (max 0.035 %, RMS 0.001 %) —
+the NFD patch lies right on the true torus surface. The reverse direction
+shows 0.343 % bbox because the hole was cut across a highly curved section
+of the torus and a few GT points near the far side of the hole don't have
+a patch vertex directly above them; those are resolvable by increasing
+`RefinementFactor` so the patch carries more interior vertices.
