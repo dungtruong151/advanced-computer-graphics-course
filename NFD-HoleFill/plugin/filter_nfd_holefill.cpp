@@ -173,6 +173,12 @@ RichParameterList FilterNFDHoleFillPlugin::initParameterList(const QAction* acti
 			"0.0 = flat patch (no bending), 1.0 = full spherical-cap fit, "
 			"2.0 = exaggerated. Lower this if the patch overshoots on non-spherical "
 			"objects (e.g. bunny, torus)."));
+		parlst.addParam(RichBool("UseDelaunayFlipping", true,
+			"Use Delaunay edge flipping",
+			"When enabled, run two Delaunay max-min-angle edge-flip passes "
+			"(once after ear clipping, once after centroid refinement) to "
+			"eliminate sliver triangles. Disable to visualise the raw "
+			"triangulation produced by ear clipping + subdivision."));
 		break;
 	default: assert(0);
 	}
@@ -202,6 +208,7 @@ std::map<std::string, QVariant> FilterNFDHoleFillPlugin::applyFilter(
 		if (refinementFactor < (Scalarm)0.1) refinementFactor = (Scalarm)0.1;
 		Scalarm curvatureStrength = parameters.getFloat("CurvatureStrength");
 		if (curvatureStrength < (Scalarm)0) curvatureStrength = (Scalarm)0;
+		bool useDelaunayFlipping = parameters.getBool("UseDelaunayFlipping");
 
 		// Step 0: Enable Ocf optional components and update topology
 		cb(0, "Updating topology...");
@@ -236,7 +243,7 @@ std::map<std::string, QVariant> FilterNFDHoleFillPlugin::applyFilter(
 			computeBoundaryInfo(m, holes[hi]);
 
 			// Step 3: Initial triangulation (ear clipping + interior vertex refinement)
-			PatchMesh patch = triangulatePatch(holes[hi], refinementFactor);
+			PatchMesh patch = triangulatePatch(holes[hi], refinementFactor, useDelaunayFlipping);
 
 			if (patch.faces.empty()) {
 				log("NFD:   WARNING: empty patch, skipping hole %d.", hi+1);
@@ -459,7 +466,7 @@ void FilterNFDHoleFillPlugin::computeBoundaryInfo(CMeshO& m, HoleBoundary& hole)
 // ===================================================================
 
 FilterNFDHoleFillPlugin::PatchMesh
-FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole, Scalarm refinementFactor)
+FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole, Scalarm refinementFactor, bool useDelaunayFlipping)
 {
 	PatchMesh patch;
 	size_t n = hole.vertexIndices.size();
@@ -637,6 +644,9 @@ FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole, Scalarm refi
 	// consider flipping to diagonal (w,x): P'=(u,x,w), Q'=(v,w,x). Accept the
 	// flip if it increases the minimum interior angle across the two faces.
 	// Iterate until no flip improves quality.
+	//
+	// The `useDelaunayFlipping` flag lets callers visualise the raw ear-clip
+	// output (slivers and all) — useful for teaching / before-after comparisons.
 	auto triMinAngle3D = [&](int ai, int bi, int ci) -> double {
 		Point3m A = patch.vertices[ai], B = patch.vertices[bi], C = patch.vertices[ci];
 		double lab = (double)(B - A).Norm();
@@ -656,7 +666,7 @@ FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole, Scalarm refi
 		return std::make_pair(std::min(a, b), std::max(a, b));
 	};
 
-	for (int flipPass = 0; flipPass < 10; flipPass++) {
+	for (int flipPass = 0; useDelaunayFlipping && flipPass < 10; flipPass++) {
 		std::map<std::pair<int, int>, std::vector<int>> edgeFaces;
 		for (int fi = 0; fi < (int)patch.faces.size(); fi++) {
 			const auto& f = patch.faces[fi];
@@ -773,7 +783,7 @@ FilterNFDHoleFillPlugin::triangulatePatch(const HoleBoundary& hole, Scalarm refi
 	// ---- Second Delaunay-like edge-flip pass after refinement ----
 	// Centroid subdivision can introduce new slivers around the inserted
 	// interior vertex; clean them up the same way.
-	for (int flipPass = 0; flipPass < 10; flipPass++) {
+	for (int flipPass = 0; useDelaunayFlipping && flipPass < 10; flipPass++) {
 		std::map<std::pair<int, int>, std::vector<int>> edgeFaces;
 		for (int fi = 0; fi < (int)patch.faces.size(); fi++) {
 			const auto& f = patch.faces[fi];

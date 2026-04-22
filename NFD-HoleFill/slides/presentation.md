@@ -7,27 +7,83 @@ size: 16:9
 style: |
   section {
     font-size: 24px;
+    background: linear-gradient(135deg, #fdfcfb 0%, #e2f0f9 100%);
+    color: #1f2937;
+  }
+  section.lead {
+    background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
   }
   h1 {
-    color: #2c3e50;
+    color: #0b5cab;
   }
   h2 {
-    color: #34495e;
-    border-bottom: 2px solid #3498db;
+    color: #0b5cab;
+    border-bottom: 3px solid #f59e0b;
     padding-bottom: 6px;
   }
+  h3 {
+    color: #0e7490;
+  }
+  strong {
+    color: #b45309;
+  }
+  a {
+    color: #0b5cab;
+  }
   code {
-    background: #f4f4f4;
+    background: #fff7ed;
+    color: #9a3412;
     padding: 2px 6px;
-    border-radius: 3px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #fff7ed !important;
+    border-left: 4px solid #f59e0b;
+    padding: 10px 14px;
+    border-radius: 6px;
+  }
+  pre code {
+    background: transparent;
+    color: #1f2937;
+  }
+  blockquote {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 8px 14px;
+    margin: 10px 0;
+    border-radius: 4px;
+    color: #78350f;
+  }
+  table {
+    border-collapse: collapse;
+    margin: 8px auto;
+  }
+  th {
+    background: #e0f2fe;
+    color: #0b5cab;
+    padding: 6px 12px;
+    border: 1px solid #bae6fd;
+  }
+  td {
+    padding: 6px 12px;
+    border: 1px solid #e0f2fe;
+    background: #ffffff;
+  }
+  tr:nth-child(even) td {
+    background: #f8fafc;
   }
   .highlight {
     background: #fff3cd;
     padding: 2px 6px;
-    border-radius: 3px;
+    border-radius: 4px;
   }
   .small {
     font-size: 18px;
+    color: #475569;
+  }
+  section::after {
+    color: #0b5cab;
+    font-weight: 600;
   }
 ---
 
@@ -144,7 +200,35 @@ where
 
 ---
 
-## 7. Post-Processing (Step 6)
+## 7. Delaunay Edge Flipping — Triangulation Quality
+
+**The slivers problem.** Ear clipping + centroid subdivision give a *valid* but not *optimal* triangulation — junction vertices end up surrounded by thin **sliver triangles**.
+
+**Max-min-angle criterion** (classic Delaunay, in 3D here):
+for every interior edge $u\!-\!v$ shared by two triangles $(u,v,w)$ and $(v,u,x)$, flip the diagonal $u\!-\!v \to w\!-\!x$ iff the minimum interior angle across the two faces **increases**. Iterate to a fixed point. Run twice — once after ear clipping, once after centroid refinement.
+
+**Why NFD needs this.** The cotangent weight $w = \cot\alpha + \cot\beta$ *blows up* on slivers → cotangent Laplacian becomes ill-conditioned → `SimplicialLDLT` diffusion solver is unstable. Removing slivers makes Step 4 numerically well-behaved.
+
+<div class="small">
+
+**Gotcha we hit.** Our first flip implementation tested winding with
+`(AB × AC) · avgNormal < 0`. This breaks on curved meshes (bunny, torus)
+because `avgNormal` — the mean of all boundary normals — is a poor
+reference for a triangle sitting on a steeply curved region. The fix was
+combinatorial: derive winding directly from the input face's CCW vertex
+order (*does v follow u in t1?* → Case A, else Case B), no normals
+involved. A nice class takeaway: **combinatorial invariants beat
+floating-point guesses when you can get them.**
+
+The filter has a `UseDelaunayFlipping` toggle so you can run NFD with
+the flips disabled and visually compare against the default on your
+own mesh.
+
+</div>
+
+---
+
+## 8. Post-Processing (Step 6)
 
 Two smoothing passes, both with boundary vertices **fixed**:
 
@@ -154,13 +238,9 @@ Two smoothing passes, both with boundary vertices **fixed**:
 2. **Taubin $\lambda/\mu$** (after displacement)
    Alternating shrink / inflate — removes per-vertex spikes without shrinking the overall dome.
 
-Plus two **Delaunay edge-flip** passes (max-min-angle criterion) to fix sliver triangles from ear clipping and centroid subdivision.
-
-Winding is derived directly from the existing CCW ordering of adjacent faces — avoids per-face flips against an unreliable global `avgNormal`.
-
 ---
 
-## 8. Implementation
+## 9. Implementation
 
 | Component | Details |
 |-----------|---------|
@@ -178,7 +258,7 @@ Pipeline runs end-to-end inside MeshLab — no external tooling needed.
 
 ---
 
-## 9. Visual Results
+## 10. Visual Results
 
 <!-- Insert side-by-side screenshots here:
      - hole mesh vs NFD-filled mesh, same camera
@@ -197,7 +277,7 @@ Pipeline runs end-to-end inside MeshLab — no external tooling needed.
 
 ---
 
-## 10. Quantitative Evaluation
+## 11. Quantitative Evaluation
 
 Measured with **MeshLab's built-in Hausdorff Distance** filter (both directions) against the unmodified ground truth.
 
@@ -213,7 +293,7 @@ Measured with **MeshLab's built-in Hausdorff Distance** filter (both directions)
 
 ---
 
-## 11. Observations
+## 12. Observations
 
 - **Sphere:** error scales roughly with hole size — expected for a smoothly curved surface.
 - **Torus:** patch hugs the true surface (forward RMS 0.001 %); reverse distance is density-limited, tunable via `RefinementFactor`.
@@ -226,7 +306,7 @@ Measured with **MeshLab's built-in Hausdorff Distance** filter (both directions)
 
 ---
 
-## 12. Conclusion
+## 13. Conclusion
 
 **What NFD delivers**
 - Sub-1 % forward RMS on every tested model

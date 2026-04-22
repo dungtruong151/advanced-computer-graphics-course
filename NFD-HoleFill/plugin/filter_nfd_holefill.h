@@ -53,7 +53,7 @@ private:
 	// ---- Pipeline steps ----
 	std::vector<HoleBoundary> detectHoles(CMeshO& m, int maxHoleSize);
 
-	PatchMesh triangulatePatch(const HoleBoundary& hole, Scalarm refinementFactor);
+	PatchMesh triangulatePatch(const HoleBoundary& hole, Scalarm refinementFactor, bool useDelaunayFlipping);
 
 	void computeBoundaryInfo(CMeshO& m, HoleBoundary& hole);
 
