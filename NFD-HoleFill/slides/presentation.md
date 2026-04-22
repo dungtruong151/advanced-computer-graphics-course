@@ -268,21 +268,26 @@ Two smoothing passes, both with boundary vertices **fixed**:
 
 ---
 
-## 9. Implementation
+## 9. Implementation & Filter Parameters
 
-| Component | Details |
-|-----------|---------|
-| Language  | C++14 |
-| Framework | MeshLab filter plugin (Qt 5, VCG Library) |
-| Solver    | Eigen 3 sparse + `SimplicialLDLT` |
-| Build     | CMake, integrated into MeshLab build tree |
-| UI        | `Filters > Remeshing... > NFD Hole Filling` |
+C++14 MeshLab plugin · VCG Library · Eigen 3 (`SimplicialLDLT`) · CMake.
+UI entry: `Filters > Remeshing... > NFD Hole Filling`.
 
-**User parameters:**
-`MaxHoleSize`, `DiffusionIterations`, `DiffusionLambda`,
-`SmoothingIterations`, `RefinementFactor`, `CurvatureStrength`
+<div class="small">
 
-Pipeline runs end-to-end inside MeshLab — no external tooling needed.
+| Parameter | Default | What it does | Effect on output |
+|-----------|--------:|--------------|------------------|
+| `MaxHoleSize` | 100 | Skip holes whose boundary has more edges than this | Large holes are left untouched — raise to fill big gaps |
+| `DiffusionIterations` | 50 | How many implicit-Euler steps of the heat equation | More iterations → smoother normal field → less bumpy patch |
+| `DiffusionLambda` | 0.5 | Diffusion coefficient $\lambda$ per step | Larger $\lambda$ → faster but coarser blending; too high can overshoot |
+| `SmoothingIterations` | 3 | Constrained-Laplacian passes before displacement | More → more uniform triangle sizes but may shrink the patch |
+| `RefinementFactor` | 1.0 | Target edge length (× avg boundary edge) | Smaller → denser patch (more detail, slower); larger → coarser |
+| `CurvatureStrength` | 1.0 | Multiplier on spherical-cap dome height | 0 = flat patch; 1 = fit to cap; >1 = exaggerated bulge |
+| `UseDelaunayFlipping` | true | Toggle max-min-angle edge flips | Off → raw sliver triangulation (for debugging / comparison) |
+
+</div>
+
+**Tuning rule of thumb.** Start with defaults → if the patch bulges wrong, drop `CurvatureStrength` → if slivers remain, lower `RefinementFactor`.
 
 ---
 
