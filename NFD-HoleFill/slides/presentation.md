@@ -20,17 +20,17 @@ style: |
     text-align: center;
   }
   section.thanks h1 {
-    font-size: 130px !important;
+    font-size: 90px !important;
     line-height: 1 !important;
     margin: 0 !important;
     color: #0b5cab !important;
     white-space: nowrap;
   }
   section.thanks p {
-    font-size: 80px !important;
+    font-size: 55px !important;
     font-weight: 700 !important;
     color: #0b5cab !important;
-    margin: 30px 0 0 0 !important;
+    margin: 24px 0 0 0 !important;
     line-height: 1 !important;
   }
   h1 {
