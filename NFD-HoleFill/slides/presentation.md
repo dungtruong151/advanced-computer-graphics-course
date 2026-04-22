@@ -85,6 +85,43 @@ style: |
     color: #0b5cab;
     font-weight: 600;
   }
+  .pipeline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .pipeline .node {
+    padding: 6px 16px;
+    border: 2px solid #0b5cab;
+    border-radius: 8px;
+    background: #ffffff;
+    min-width: 560px;
+    text-align: center;
+    font-size: 20px;
+    box-shadow: 0 2px 4px rgba(11, 92, 171, 0.12);
+  }
+  .pipeline .node b {
+    color: #0b5cab;
+  }
+  .pipeline .input,
+  .pipeline .output {
+    background: #fef3c7;
+    border-color: #b45309;
+  }
+  .pipeline .core {
+    background: linear-gradient(135deg, #dbeafe 0%, #fef3c7 100%);
+    border: 3px solid #f59e0b;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+  }
+  .pipeline .arrow {
+    font-size: 22px;
+    color: #0b5cab;
+    line-height: 1;
+    margin: -2px 0;
+  }
 ---
 
 <!-- _class: lead -->
@@ -135,20 +172,23 @@ The diffused **normal field** guides how each interior vertex should move to rec
 
 ## 3. Six-Step Pipeline
 
-```
-Input mesh with hole(s)
-       |
- [1] Hole Detection         -- trace boundary edge loops
- [2] Initial Triangulation  -- ear clipping + centroid subdivision
- [3] Boundary Analysis      -- normals + mean curvature at boundary
- [4] Normal Field Diffusion -- heat equation on the patch  (CORE)
- [5] Displacement           -- move interior along diffused normals
- [6] Smoothing              -- Laplacian + Taubin cleanup
-       |
-Output: filled mesh
-```
-
-The key novelty is **Step 4** — the rest is support scaffolding around it.
+<div class="pipeline">
+  <div class="node input">Input mesh with hole(s)</div>
+  <div class="arrow">▼</div>
+  <div class="node"><b>1 — Hole Detection</b> &nbsp;·&nbsp; trace boundary edge loops</div>
+  <div class="arrow">▼</div>
+  <div class="node"><b>2 — Initial Triangulation</b> &nbsp;·&nbsp; ear clipping + centroid subdivision</div>
+  <div class="arrow">▼</div>
+  <div class="node"><b>3 — Boundary Analysis</b> &nbsp;·&nbsp; normals + mean curvature</div>
+  <div class="arrow">▼</div>
+  <div class="node core"><b>4 — Normal Field Diffusion</b> &nbsp;·&nbsp; heat equation on the patch &nbsp;★ CORE</div>
+  <div class="arrow">▼</div>
+  <div class="node"><b>5 — Displacement</b> &nbsp;·&nbsp; move interior along diffused normals</div>
+  <div class="arrow">▼</div>
+  <div class="node"><b>6 — Smoothing</b> &nbsp;·&nbsp; Laplacian + Taubin cleanup</div>
+  <div class="arrow">▼</div>
+  <div class="node output">Output: filled mesh</div>
+</div>
 
 ---
 
