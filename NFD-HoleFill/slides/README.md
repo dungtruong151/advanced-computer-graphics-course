@@ -1,7 +1,7 @@
 # Slides
 
 `presentation.md` is a [Marp](https://marp.app/) slide deck — Markdown with a
-YAML frontmatter. 13 slides, paced for ~10 minutes.
+YAML frontmatter. 13 slides total (12 content + Thank You), paced for ~10 minutes.
 
 ## Preview in VS Code
 
