@@ -106,20 +106,63 @@ The plugin DLL is already in the correct `plugins/` folder relative to `meshlab.
 
 ## Test Data
 
-Test meshes with pre-created holes are in `NFD-HoleFill/data/input/`:
+Every test case in `NFD-HoleFill/data/input/` comes as a **pair**:
 
-| File | Description | Vertices | Faces | Holes |
-|------|-------------|----------|-------|-------|
-| `sphere_small_hole.ply` | Icosphere, 1 small hole (top) | 642 | 1,274 | 1 |
-| `sphere_large_hole.ply` | Icosphere, 1 large hole (top) | 642 | 1,256 | 1 |
-| `sphere_two_holes.ply` | Icosphere, holes at top and bottom | 642 | 1,268 | 2 |
-| `cylinder_side_hole.ply` | Cylinder, hole on the side | 82 | 155 | 1 |
-| `torus_hole.ply` | Torus, 1 hole at outer edge | 640 | 1,274 | 1 |
-| `bunny_hole.ply` | Stanford Bunny, hole at top | 34,834 | 69,427 | 6 |
+- `<name>_gt.ply` — the ground-truth mesh (no hole), used for evaluation
+- `<name>_hole.ply` — the same mesh with faces removed to form a hole
 
-To regenerate test meshes: `python data/generate_test_meshes.py` (requires `trimesh`, `numpy`)
+| Pair | Description | Vertices | Faces | Holes |
+|------|-------------|---------:|------:|------:|
+| `sphere_small` | Icosphere, 1 small hole (top) | 642 | 1,274 | 1 |
+| `sphere_large` | Icosphere, 1 large hole (top) | 642 | 1,256 | 1 |
+| `sphere_two`   | Icosphere, holes at top and bottom | 642 | 1,268 | 2 |
+| `cylinder_side`| Cylinder, hole on the side | 82 | 155 | 1 |
+| `torus`        | Torus, 1 hole at outer edge | 640 | 1,274 | 1 |
+| `bunny`        | Stanford Bunny, hole at top | 34,834 | 69,427 | 6 |
+| `spot`         | Cow (watertight Spot substitute) | 2,903 | 5,774 | 1 |
+
+To regenerate: `python data/generate_test_meshes.py`
+(requires `trimesh`, `numpy`; also auto-downloads `stanford-bunny.obj` and
+`cow.obj` from the `alecjacobson/common-3d-test-models` GitHub mirror.)
 
 Start with `sphere_small_hole.ply` for the simplest test case.
+
+---
+
+## Evaluation
+
+The proposal asks for three quantitative metrics:
+
+1. **Hausdorff Distance** — symmetric max closest-point distance
+2. **RMS Error** — root-mean-square of closest-point distances
+3. **Normal Deviation** — mean angular difference between filled and GT face normals
+
+Evaluation workflow:
+
+```bash
+# 1. Regenerate ground-truth / hole pairs (only needed once)
+cd NFD-HoleFill/data
+python generate_test_meshes.py
+
+# 2. (In MeshLab) For each <name>_hole.ply:
+#    - File > Import Mesh  -> open <name>_hole.ply
+#    - Filters > Remeshing... > NFD Hole Filling > Apply
+#    - File > Export Mesh As -> save as <name>_filled.ply
+#      (same folder: NFD-HoleFill/data/input/)
+
+# 3. Run the batch evaluator — it picks up every pair that has a _filled.ply
+#    sibling and writes a summary table to evaluation_results.md.
+python run_evaluation.py
+```
+
+Single-pair evaluation (for quick checks while tuning parameters):
+
+```bash
+python evaluate.py input/bunny_gt.ply input/bunny_filled.ply
+```
+
+Output includes absolute values and percentages of the bounding-box diagonal,
+so you can compare results across models of different scale.
 
 ---
 

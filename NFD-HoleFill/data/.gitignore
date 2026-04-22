@@ -1,0 +1,9 @@
+# Cached downloads from generate_test_meshes.py
+input/_*.obj
+input/_*.mtl
+
+# NFD-filled outputs (produced by user running MeshLab + evaluate.py)
+input/*_filled.ply
+
+# Batch evaluation output
+evaluation_results.md
