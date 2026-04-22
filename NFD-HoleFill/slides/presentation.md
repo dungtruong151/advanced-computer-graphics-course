@@ -4,6 +4,7 @@ theme: default
 paginate: true
 math: katex
 size: 16:9
+html: true
 style: |
   section {
     font-size: 24px;
@@ -12,6 +13,25 @@ style: |
   }
   section.lead {
     background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  section.thanks h1 {
+    font-size: 200px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    color: #0b5cab !important;
+    white-space: nowrap;
+  }
+  section.thanks p {
+    font-size: 120px !important;
+    font-weight: 700 !important;
+    color: #0b5cab !important;
+    margin: 40px 0 0 0 !important;
+    line-height: 1 !important;
   }
   h1 {
     color: #0b5cab;
@@ -378,13 +398,9 @@ Measured with **MeshLab's built-in Hausdorff Distance** filter (both directions)
 
 ---
 
-<!-- _class: lead -->
+<!-- _class: lead thanks -->
 <!-- _paginate: false -->
 
-<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:30px;">
+# Thank you
 
-<h1 style="font-size:120px;margin:0;">Thank you</h1>
-
-<div style="font-size:72px;font-weight:600;color:#0b5cab;">Q &amp; A</div>
-
-</div>
+Q & A

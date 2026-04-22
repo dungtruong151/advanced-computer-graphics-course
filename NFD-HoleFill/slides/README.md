@@ -10,17 +10,42 @@ open `presentation.md`. Marp shows a live-preview pane on the right.
 
 ## Export to PDF / PPTX / HTML
 
-With the Marp VS Code extension:
+The deck uses `html: true` in its frontmatter (needed for the big
+Thank-You slide and the image-pair layout). Pass `--html` to the CLI or
+enable **"Enable HTML"** in the VS Code Marp extension so those elements
+survive export.
 
-- `Ctrl+Shift+P` → `Marp: Export slide deck...` → choose format.
+### Marp CLI (recommended — no global install needed)
 
-Or from the Marp CLI (`npm install -g @marp-team/marp-cli`):
+From `NFD-HoleFill/slides/`:
 
 ```bash
-marp presentation.md -o presentation.pdf
-marp presentation.md -o presentation.pptx
-marp presentation.md -o presentation.html
+# PPTX (PowerPoint)
+npx --yes @marp-team/marp-cli@latest presentation.md -o presentation.pptx --html --allow-local-files
+
+# PDF
+npx --yes @marp-team/marp-cli@latest presentation.md -o presentation.pdf --html --allow-local-files
+
+# Standalone HTML
+npx --yes @marp-team/marp-cli@latest presentation.md -o presentation.html --html --allow-local-files
 ```
+
+- `--html` keeps the raw HTML (flex layouts, centered headings).
+- `--allow-local-files` lets Marp pull in the PNGs from this folder.
+
+Global install (optional, skips `npx` prompt each run):
+
+```bash
+npm install -g @marp-team/marp-cli
+marp presentation.md -o presentation.pptx --html --allow-local-files
+```
+
+### VS Code Marp extension
+
+1. Install `marp-team.marp-vscode`.
+2. Settings → search **Marp: Enable HTML** → tick it.
+3. Open `presentation.md`.
+4. `Ctrl+Shift+P` → `Marp: Export slide deck...` → choose PowerPoint Document (.pptx).
 
 ## Screenshots you need to capture
 
