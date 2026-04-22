@@ -44,23 +44,21 @@ Referenced in the deck as `delaunay_off.png` and `delaunay_on.png`:
 - Crop to roughly 880×660 px before saving so the two side-by-side images
   at `width:440px` in the slide remain sharp.
 
-### Optional for slide 10 (Visual Results)
+### Required for slide 10 (Visual Results)
 
-Not referenced by the deck yet — add them later if you want to replace the
-plain table with images. Suggested naming if you do:
+Referenced in the deck as `result_before.png` and `result_after.png`:
 
-```
-sphere_small_before.png    sphere_small_after.png
-sphere_large_before.png    sphere_large_after.png
-torus_before.png           torus_after.png
-bunny_before.png           bunny_after.png
-cow_before.png             cow_after.png
-```
+| File | How to produce it |
+|------|------------------|
+| `result_before.png` | Load any `data/input/<name>_hole.ply` (bunny is the most visually impressive) → frame the hole in the viewport → screenshot |
+| `result_after.png`  | **Same camera.** Run `Filters > NFD Hole Filling` with defaults → screenshot |
 
-Edit slide 10 to embed them as e.g.
-```markdown
-![width:400px](bunny_before.png) ![width:400px](bunny_after.png)
-```
+Pick **one** model — the deck shows a single before/after pair, not a row
+per model. Bunny or cow gives the most dramatic result; sphere_large is
+the cleanest showcase of the patch quality.
+
+**Same-camera trick:** in MeshLab use `View > Copy Shot` before filtering
+and `View > Paste Shot` after so the camera is identical.
 
 ## Folder layout Marp expects
 
@@ -68,7 +66,8 @@ Edit slide 10 to embed them as e.g.
 NFD-HoleFill/slides/
   presentation.md       # deck (references images by filename only)
   README.md             # this file
-  delaunay_off.png      # <- drop here
-  delaunay_on.png       # <- drop here
-  ...any other screenshots you add
+  delaunay_off.png      # <- slide 7, Delaunay off
+  delaunay_on.png       # <- slide 7, Delaunay on
+  result_before.png     # <- slide 10, mesh with hole
+  result_after.png      # <- slide 10, after NFD fill
 ```

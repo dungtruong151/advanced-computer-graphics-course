@@ -293,20 +293,13 @@ UI entry: `Filters > Remeshing... > NFD Hole Filling`.
 
 ## 10. Visual Results
 
-<!-- Insert side-by-side screenshots here:
-     - hole mesh vs NFD-filled mesh, same camera
-     - one row per model (sphere / torus / bunny / cow)
--->
+![width:440px](result_before.png) ![width:440px](result_after.png)
 
-| Model        | V / F | Holes |
-|--------------|------:|------:|
-| sphere_small | 642 / 1,274 | 1 |
-| sphere_large | 642 / 1,256 | 1 |
-| torus        | 640 / 1,274 | 1 |
-| bunny        | 34,834 / 69,427 | 6 |
-| cow          | 2,903 / 5,774 | 1 |
+<div class="small" style="text-align:center;">
 
-*Screenshots: `data/input/<name>_hole.ply` → NFD → filled mesh.*
+**Left:** input mesh with hole &nbsp;|&nbsp; **Right:** same mesh after NFD hole filling
+
+</div>
 
 ---
 
