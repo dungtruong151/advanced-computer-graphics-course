@@ -1,6 +1,0 @@
-# Cached downloads from generate_test_meshes.py
-input/_*.obj
-input/_*.mtl
-
-# NFD-filled outputs exported from MeshLab for evaluation
-input/*_filled.ply
