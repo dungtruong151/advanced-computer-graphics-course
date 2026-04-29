@@ -1,0 +1,830 @@
+% =====================================================================
+% Section 3 — Medical Image Processing (Bilingual EN | VI)
+% =====================================================================
+\begin{paracol}{2}
+
+% ---------------------------------------------------------------------
+% 3.1 Imaging Modalities
+% ---------------------------------------------------------------------
+\section*{3. Medical Image Processing}
+\subsection*{3.1 Imaging Modalities}
+\textbf{MRI (Magnetic Resonance Imaging).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Physics:} hydrogen ($^1$H) protons in water/fat align with strong static field $B_0$ (1.5T or 3T). RF pulse at Larmor freq.\ $\omega_0=\gamma B_0$ tips magnetization; gradient coils ($G_x,G_y,G_z$) encode space; receive coil samples FID.
+  \item \emph{Relaxation:} $T_1$ longitudinal recovery, $T_2$ transverse decay, $T_2^*$ (with field inhomogeneity), PD (proton density).
+  \item \emph{Sequences:} T1w, T2w, FLAIR (fluid-attenuated, suppresses CSF), DWI (diffusion), MRA (angiography), fMRI BOLD (blood oxygen level dependent), MRS (spectroscopy), SWI.
+  \item \emph{Strengths:} excellent soft-tissue contrast; no ionizing radiation; multiplanar.
+  \item \emph{Weaknesses:} slow ($\sim$30 min), expensive, claustrophobia, contraindication with metal/pacemakers.
+  \item \emph{Output:} k-space (Fourier domain) $\to$ DICOM volume.
+\end{itemize}
+
+\textbf{CT (Computed Tomography).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Physics:} rotating X-ray source + arc detector; multi-angle line integrals of attenuation $\mu(x,y)$ form sinogram $p(t,\theta)$.
+  \item \emph{Reconstruction:} Filtered Back Projection (FBP) using Radon inverse; or iterative (ART, SIRT, MLEM, MBIR), now deep-learning recon.
+  \item \emph{Hounsfield Units:} $\mathrm{HU}=1000\frac{\mu-\mu_w}{\mu_w}$. Air $-1000$, fat $-100$, water $0$, soft tissue $-100..+100$, bone $+400..+1000$, metal $>+2000$.
+  \item Fast ($<$1\,s/slice), high spatial resolution, but ionizing.
+  \item CT angiography (CTA), perfusion CT, dual-energy CT, cone-beam CT (CBCT).
+\end{itemize}
+
+\textbf{Ultrasound (US).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Piezoelectric transducer emits 2--15 MHz pulses; echo time $\to$ depth $d=ct/2$ ($c\!\approx\!1540$ m/s in soft tissue).
+  \item Modes: A-mode (1D amplitude), B-mode (2D brightness), M-mode (motion), Doppler (flow velocity via freq shift).
+  \item Real-time, cheap, no radiation, portable; operator-dependent, poor through bone/air. Use: obstetrics, cardiac (echo), abdominal, vascular.
+\end{itemize}
+
+\textbf{PET (Positron Emission Tomography).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Radiotracer ($^{18}$F-FDG, $^{11}$C, $^{68}$Ga) emits $\beta^+$; positron annihilates with electron $\to$ pair of 511\,keV $\gamma$ photons at $\sim$180$^\circ$; ring detectors record coincidences.
+  \item Functional/metabolic imaging (glucose uptake $\Rightarrow$ tumor activity).
+  \item Hybrid PET-CT and PET-MRI co-register anatomy + function.
+\end{itemize}
+
+\textbf{X-ray (planar radiography, mammography).} 2D projection of attenuation; cheap; bone/lung screening; mammography uses low-energy X-ray for breast soft tissue.
+
+\textbf{Other modalities (brief).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{SPECT:} $\gamma$-emitting tracer (Tc-99m); cheaper than PET, lower res.
+  \item \textbf{OCT:} optical coherence tomography, low-coherence interferometry, micrometer resolution; ophthalmology, dermatology.
+  \item \textbf{Fluoroscopy:} continuous X-ray for real-time guidance (catheter, GI).
+  \item \textbf{Endoscopy, microscopy (H\&E, IHC) — pathology.}
+\end{itemize}
+
+\textbf{DICOM (Digital Imaging and Communications in Medicine).}
+File = header (tag-VR-length-value triples: PatientID, Modality, PixelSpacing, SliceThickness, RescaleIntercept/Slope, StudyUID, SeriesUID, SOPInstanceUID) + pixel data. Network protocol DIMSE. PACS (Picture Archive and Communication System) stores; HL7/FHIR for textual records.
+
+\smallskip
+\footnotesize
+\begin{tabular}{@{}llllll@{}}
+\toprule
+Mod. & Physics & Res. & Rad. & Speed & Best for \\
+\midrule
+MRI & H+RF+B$_0$ & $\sim$1 mm & no & slow & soft tissue, brain \\
+CT & X-ray & $<$0.5 mm & yes & fast & bone, lung, trauma \\
+US & sound echo & $\sim$0.5 mm & no & real-time & OB, cardiac \\
+PET & $\beta^+$ tracer & $\sim$4 mm & yes & medium & metabolism, oncology \\
+X-ray & X-ray 2D & $\sim$0.1 mm & yes & instant & chest, bone, mammo \\
+SPECT & $\gamma$ tracer & $\sim$8 mm & yes & medium & cardiac, bone scan \\
+OCT & near-IR light & $\mu$m & no & fast & retina, skin \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\switchcolumn
+
+\section*{3. Xử lý ảnh y tế}
+\subsection*{3.1 Phương thức tạo ảnh}
+\textbf{MRI (Cộng hưởng từ).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Vật lý:} proton $^1$H trong nước/mỡ xếp theo từ trường tĩnh $B_0$ (1.5T hoặc 3T). Xung RF tại tần số Larmor $\omega_0=\gamma B_0$ làm lệch từ hóa; cuộn gradient $G_x,G_y,G_z$ mã hóa không gian; cuộn thu nhận tín hiệu FID.
+  \item \emph{Hồi phục:} $T_1$ dọc, $T_2$ ngang, $T_2^*$ (kèm bất đồng nhất từ trường), PD (mật độ proton).
+  \item \emph{Chuỗi xung:} T1w, T2w, FLAIR (xóa dịch não tủy), DWI (khuếch tán), MRA (mạch máu), fMRI BOLD (oxy hóa máu), MRS (phổ), SWI.
+  \item \emph{Ưu:} tương phản mô mềm xuất sắc; không bức xạ ion hóa; đa mặt phẳng.
+  \item \emph{Nhược:} chậm ($\sim$30 phút), đắt, sợ kín, chống chỉ định với kim loại/máy tạo nhịp.
+  \item \emph{Đầu ra:} k-space (miền Fourier) $\to$ thể tích DICOM.
+\end{itemize}
+
+\textbf{CT (Cắt lớp vi tính).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Vật lý:} ống X-quang quay + dãy đầu dò; tích phân đường suy giảm $\mu(x,y)$ ở nhiều góc $\to$ sinogram $p(t,\theta)$.
+  \item \emph{Tái tạo:} Filtered Back Projection (FBP) qua biến đổi Radon ngược; hoặc lặp (ART, SIRT, MLEM, MBIR), nay có deep-learning recon.
+  \item \emph{Hounsfield Unit:} $\mathrm{HU}=1000\frac{\mu-\mu_w}{\mu_w}$. Khí $-1000$, mỡ $-100$, nước $0$, mô mềm $-100..+100$, xương $+400..+1000$, kim loại $>+2000$.
+  \item Nhanh ($<$1\,s/lát), độ phân giải cao, nhưng có bức xạ.
+  \item CT mạch máu (CTA), CT tưới máu, CT đa năng lượng, CBCT (cone-beam).
+\end{itemize}
+
+\textbf{Siêu âm (US).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Đầu dò áp điện phát xung 2--15 MHz; thời gian dội $\to$ độ sâu $d=ct/2$ ($c\!\approx\!1540$ m/s trong mô mềm).
+  \item Chế độ: A-mode (biên độ 1D), B-mode (sáng 2D), M-mode (chuyển động), Doppler (vận tốc dòng theo dịch chuyển tần số).
+  \item Thời gian thực, rẻ, không bức xạ, di động; phụ thuộc kỹ thuật viên, kém qua xương/khí. Dùng: sản phụ khoa, tim mạch, ổ bụng, mạch máu.
+\end{itemize}
+
+\textbf{PET (Cắt lớp phát xạ positron).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Chất đánh dấu phóng xạ ($^{18}$F-FDG, $^{11}$C, $^{68}$Ga) phát $\beta^+$; positron hủy với electron $\to$ cặp photon $\gamma$ 511\,keV cách nhau $\sim$180$^\circ$; vòng đầu dò ghi nhận trùng hợp.
+  \item Hình ảnh chức năng/chuyển hóa (hấp thu glucose $\Rightarrow$ hoạt động khối u).
+  \item PET-CT và PET-MRI lai ghép giải phẫu + chức năng.
+\end{itemize}
+
+\textbf{X-quang (chụp phẳng, chụp nhũ ảnh).} Hình chiếu 2D của hệ số suy giảm; rẻ; tầm soát xương/phổi; nhũ ảnh dùng X-quang năng lượng thấp cho mô mềm vú.
+
+\textbf{Các phương thức khác (tóm tắt).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{SPECT:} chất đánh dấu phát $\gamma$ (Tc-99m); rẻ hơn PET, độ phân giải kém hơn.
+  \item \textbf{OCT:} chụp cắt lớp quang học giao thoa độ kết hợp thấp, độ phân giải micromet; nhãn khoa, da liễu.
+  \item \textbf{Soi huỳnh quang (Fluoroscopy):} X-quang liên tục thời gian thực (đặt catheter, tiêu hóa).
+  \item \textbf{Nội soi, kính hiển vi (H\&E, IHC) — giải phẫu bệnh.}
+\end{itemize}
+
+\textbf{DICOM.}
+File = header (bộ ba tag-VR-length-value: PatientID, Modality, PixelSpacing, SliceThickness, RescaleIntercept/Slope, StudyUID, SeriesUID, SOPInstanceUID) + dữ liệu pixel. Giao thức mạng DIMSE. PACS lưu trữ; HL7/FHIR cho dữ liệu văn bản.
+
+\smallskip
+\footnotesize
+\begin{tabular}{@{}llllll@{}}
+\toprule
+P.thức & Vật lý & Đ.giải & B.xạ & T.độ & Tốt cho \\
+\midrule
+MRI & H+RF+B$_0$ & $\sim$1 mm & không & chậm & mô mềm, não \\
+CT & X-quang & $<$0.5 mm & có & nhanh & xương, phổi, c.thương \\
+US & sóng âm & $\sim$0.5 mm & không & realtime & sản, tim \\
+PET & tracer $\beta^+$ & $\sim$4 mm & có & vừa & ch.hóa, ung thư \\
+X-q & X-quang 2D & $\sim$0.1 mm & có & tức thì & ngực, xương, vú \\
+SPECT & tracer $\gamma$ & $\sim$8 mm & có & vừa & tim, xương \\
+OCT & ánh sáng IR & $\mu$m & không & nhanh & võng mạc, da \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\switchcolumn*
+
+% ---------------------------------------------------------------------
+% 3.2 Acquisition Pipeline
+% ---------------------------------------------------------------------
+\subsection*{3.2 Acquisition $\to$ Reconstruction Pipeline}
+Patient prep (fasting, contrast injection, positioning) $\to$ scan (raw signal: \emph{k-space} for MRI, \emph{sinogram} for CT, RF echo for US, list-mode coincidences for PET) $\to$ reconstruction $\to$ post-processing (filter, MPR, MIP) $\to$ DICOM tag-write $\to$ PACS server $\to$ workstation/viewer (radiologist) $\to$ structured report (HL7/FHIR) $\to$ EMR.
+
+\medskip
+\begin{center}
+\begin{tikzpicture}[node distance=4mm, every node/.style={font=\scriptsize, draw, rounded corners, inner sep=2pt, fill=blue!8}]
+\node (a) {Patient};
+\node (b) [right=of a] {Scanner};
+\node (c) [right=of b] {Raw};
+\node (d) [right=of c] {Recon};
+\node (e) [below=of d] {DICOM};
+\node (f) [left=of e] {PACS};
+\node (g) [left=of f] {Viewer};
+\node (h) [left=of g] {Report};
+\draw[->] (a)--(b); \draw[->] (b)--(c); \draw[->] (c)--(d);
+\draw[->] (d)--(e); \draw[->] (e)--(f); \draw[->] (f)--(g); \draw[->] (g)--(h);
+\end{tikzpicture}
+\end{center}
+
+\switchcolumn
+
+\subsection*{3.2 Pipeline thu nhận $\to$ tái tạo}
+Chuẩn bị bệnh nhân (nhịn ăn, tiêm thuốc cản quang, tư thế) $\to$ quét (tín hiệu thô: \emph{k-space} cho MRI, \emph{sinogram} cho CT, dội RF cho US, list-mode trùng hợp cho PET) $\to$ tái tạo $\to$ hậu xử lý (lọc, MPR, MIP) $\to$ ghi tag DICOM $\to$ máy chủ PACS $\to$ trạm đọc (BS chẩn đoán hình ảnh) $\to$ báo cáo có cấu trúc (HL7/FHIR) $\to$ EMR (hồ sơ bệnh án).
+
+\medskip
+\begin{center}
+\begin{tikzpicture}[node distance=4mm, every node/.style={font=\scriptsize, draw, rounded corners, inner sep=2pt, fill=red!8}]
+\node (a) {B.nhân};
+\node (b) [right=of a] {Máy};
+\node (c) [right=of b] {Thô};
+\node (d) [right=of c] {Recon};
+\node (e) [below=of d] {DICOM};
+\node (f) [left=of e] {PACS};
+\node (g) [left=of f] {Viewer};
+\node (h) [left=of g] {B.cáo};
+\draw[->] (a)--(b); \draw[->] (b)--(c); \draw[->] (c)--(d);
+\draw[->] (d)--(e); \draw[->] (e)--(f); \draw[->] (f)--(g); \draw[->] (g)--(h);
+\end{tikzpicture}
+\end{center}
+
+\switchcolumn*
+
+% ---------------------------------------------------------------------
+% 3.3 Reconstruction methods
+% ---------------------------------------------------------------------
+\subsection*{3.3 Reconstruction Methods}
+\textbf{CT — Filtered Back Projection (FBP).}
+Sinogram $p(t,\theta)$ where $t=x\cos\theta+y\sin\theta$.
+\begin{enumerate}[leftmargin=*,nosep]
+  \item 1D Fourier transform of each projection: $P(\omega,\theta)=\mathcal F_t\{p\}$.
+  \item Apply ramp filter $|\omega|$ (often Shepp-Logan / Hann window): $\tilde P=|\omega|P$.
+  \item Inverse 1D FT $\to \tilde p(t,\theta)$.
+  \item Back-project:
+  $$f(x,y)=\int_0^\pi \tilde p(x\cos\theta + y\sin\theta,\theta)\,d\theta$$
+\end{enumerate}
+\emph{Central Slice Theorem:} 1D FT of projection at angle $\theta$ = central slice of 2D FT of $f$.
+
+\textbf{Iterative CT.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item ART (Algebraic Reconstruction): Kaczmarz row-action $f^{k+1}=f^k+\lambda \frac{p_i-A_i f^k}{\|A_i\|^2}A_i^T$.
+  \item SIRT (Simultaneous), MLEM (max-likelihood expectation maximization, used in PET).
+  \item Model-Based Iterative Recon (MBIR): noise model + prior (TV, Markov).
+  \item Deep-learning: AUTOMAP, DnCNN-prior, unrolled networks (LEARN, Primal-Dual).
+\end{itemize}
+
+\textbf{MRI reconstruction.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Fully sampled: $f(x,y)=\mathcal F^{-1}\{S(k_x,k_y)\}$ (2D inverse FFT of k-space).
+  \item Parallel imaging: SENSE (image domain unfolding via coil sensitivities), GRAPPA (k-space interpolation).
+  \item Compressed sensing: $\min_x \|F_u x-y\|_2^2 + \lambda\|\Psi x\|_1$ (sparsity in wavelet/TV).
+  \item DL recon: VarNet, MoDL, AUTOMAP.
+\end{itemize}
+
+\textbf{3D Reconstruction from 2D Slices (graphics-relevant).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Stack DICOM slices $\to$ regular voxel grid $V(x,y,z)$ with anisotropic spacing.
+  \item \textbf{Direct Volume Rendering (DVR):}
+    \begin{itemize}[leftmargin=*,nosep]
+      \item Ray casting front-to-back; emission-absorption integral
+      $$I=\int_0^L C(s)\,\mu(s)\,e^{-\int_0^s\mu(t)dt}\,ds$$
+      Discrete compositing: $C_{out}=C_{in}(1-\alpha)+C\alpha$.
+      \item Transfer function $\mathrm{TF}:\,\mathrm{intensity}\to(R,G,B,\alpha)$ — tunable for tissue selection.
+      \item Variants: splatting (footprint of voxel), 3D texture mapping (GPU slabs), shear-warp (Lacroute \& Levoy), GPU ray-marching.
+    \end{itemize}
+  \item \textbf{Surface Extraction — Marching Cubes (Lorensen \& Cline 1987):}
+    \begin{enumerate}[leftmargin=*,nosep]
+      \item For each voxel cube, classify each of 8 corners as inside/outside iso-surface ($\geq T$).
+      \item 8-bit index $\to$ one of $2^8=256$ cases; using rotational+reflection symmetry $\to$ 15 base cases.
+      \item Lookup table gives edge list; linear interp on each edge:
+      $\mathbf p=\mathbf p_a+\frac{T-V_a}{V_b-V_a}(\mathbf p_b-\mathbf p_a)$.
+      \item Connect to triangles; estimate normal from $\nabla V$ for shading.
+    \end{enumerate}
+    \emph{Ambiguity:} same edge index can have two topologies; resolved by \emph{asymptotic decider} (sign of bilinear interp at saddle).
+  \item Variants:
+    \begin{itemize}[leftmargin=*,nosep]
+      \item Marching Tetrahedra (split cube into 5 or 6 tets — no ambiguity, more triangles).
+      \item Dual Contouring (Ju et al.) — uses Hermite data on edges, places one vertex per cube via QEF, preserves sharp features.
+      \item Cuberille (blocky), Extended/Topological MC.
+    \end{itemize}
+  \item \textbf{Pipeline:} segment ROI $\to$ MC iso-surface $\to$ smoothing (Taubin $\lambda|\mu$ — keeps volume) $\to$ simplification (QEM — Garland-Heckbert) $\to$ texturing/lighting/render.
+\end{itemize}
+
+\textbf{VTK pipeline.}\\
+{\scriptsize\ttfamily Reader (vtkDICOMImageReader) $\to$ Filter (vtkImageGaussianSmooth, vtkContourFilter, vtkMarchingCubes) $\to$ Mapper (vtkPolyDataMapper) $\to$ Actor $\to$ Renderer $\to$ RenderWindow+Interactor.}
+
+\switchcolumn
+
+\subsection*{3.3 Phương pháp tái tạo}
+\textbf{CT — Filtered Back Projection (FBP).}
+Sinogram $p(t,\theta)$ với $t=x\cos\theta+y\sin\theta$.
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Biến đổi Fourier 1D mỗi hình chiếu: $P(\omega,\theta)=\mathcal F_t\{p\}$.
+  \item Áp bộ lọc \emph{ramp} $|\omega|$ (thường kèm cửa sổ Shepp-Logan/Hann): $\tilde P=|\omega|P$.
+  \item FT ngược 1D $\to \tilde p(t,\theta)$.
+  \item Chiếu ngược:
+  $$f(x,y)=\int_0^\pi \tilde p(x\cos\theta + y\sin\theta,\theta)\,d\theta$$
+\end{enumerate}
+\emph{Định lý lát cắt trung tâm:} FT 1D của hình chiếu góc $\theta$ chính là lát cắt qua tâm của FT 2D của $f$.
+
+\textbf{CT lặp.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item ART (Đại số): Kaczmarz $f^{k+1}=f^k+\lambda \frac{p_i-A_i f^k}{\|A_i\|^2}A_i^T$.
+  \item SIRT (đồng thời), MLEM (cực đại hóa kỳ vọng — dùng trong PET).
+  \item MBIR (dựa mô hình): mô hình nhiễu + tiên nghiệm (TV, Markov).
+  \item Deep-learning: AUTOMAP, DnCNN-prior, mạng "unrolled" (LEARN, Primal-Dual).
+\end{itemize}
+
+\textbf{Tái tạo MRI.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Lấy mẫu đầy đủ: $f(x,y)=\mathcal F^{-1}\{S(k_x,k_y)\}$ (FFT ngược 2D từ k-space).
+  \item Parallel imaging: SENSE (gỡ rối miền ảnh qua bản đồ độ nhạy cuộn), GRAPPA (nội suy k-space).
+  \item Compressed sensing: $\min_x \|F_u x-y\|_2^2 + \lambda\|\Psi x\|_1$ (thưa trên wavelet/TV).
+  \item DL recon: VarNet, MoDL, AUTOMAP.
+\end{itemize}
+
+\textbf{Tái tạo 3D từ các lát 2D (liên quan đồ họa).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Xếp chồng các lát DICOM $\to$ lưới voxel đều $V(x,y,z)$, khoảng cách bất đẳng hướng.
+  \item \textbf{Direct Volume Rendering (DVR):}
+    \begin{itemize}[leftmargin=*,nosep]
+      \item Ray casting front-to-back; tích phân phát xạ-hấp thụ
+      $$I=\int_0^L C(s)\,\mu(s)\,e^{-\int_0^s\mu(t)dt}\,ds$$
+      Hợp thành rời rạc: $C_{out}=C_{in}(1-\alpha)+C\alpha$.
+      \item Transfer function $\mathrm{TF}:\,\mathrm{cường độ}\to(R,G,B,\alpha)$ — chỉnh để chọn loại mô.
+      \item Biến thể: splatting (dấu chân voxel), 3D texture (GPU slabs), shear-warp (Lacroute–Levoy), ray-marching trên GPU.
+    \end{itemize}
+  \item \textbf{Trích bề mặt — Marching Cubes (Lorensen \& Cline 1987):}
+    \begin{enumerate}[leftmargin=*,nosep]
+      \item Với mỗi khối voxel, phân loại 8 góc bên trong/ngoài bề mặt đẳng trị ($\geq T$).
+      \item Chỉ số 8-bit $\to$ một trong $2^8=256$ trường hợp; dùng đối xứng quay+phản xạ $\to$ 15 trường hợp gốc.
+      \item Bảng tra tra ra danh sách cạnh; nội suy tuyến tính trên mỗi cạnh:
+      $\mathbf p=\mathbf p_a+\frac{T-V_a}{V_b-V_a}(\mathbf p_b-\mathbf p_a)$.
+      \item Nối thành tam giác; tính pháp tuyến từ $\nabla V$ để tô bóng.
+    \end{enumerate}
+    \emph{Mơ hồ:} cùng một chỉ số cạnh có thể có hai topology; xử lý bằng \emph{asymptotic decider} (dấu của nội suy song tuyến tại điểm yên ngựa).
+  \item Biến thể:
+    \begin{itemize}[leftmargin=*,nosep]
+      \item Marching Tetrahedra (chia khối thành 5 hoặc 6 tứ diện — không mơ hồ, nhiều tam giác hơn).
+      \item Dual Contouring (Ju et al.) — dùng Hermite trên cạnh, đặt một đỉnh/khối qua QEF, giữ được cạnh sắc.
+      \item Cuberille (lập phương), Extended/Topological MC.
+    \end{itemize}
+  \item \textbf{Quy trình:} phân vùng ROI $\to$ MC iso-surface $\to$ làm mịn (Taubin $\lambda|\mu$ — bảo toàn thể tích) $\to$ giảm tam giác (QEM — Garland-Heckbert) $\to$ gán texture/chiếu sáng/render.
+\end{itemize}
+
+\textbf{Pipeline VTK.}\\
+{\scriptsize\ttfamily Reader (vtkDICOMImageReader) $\to$ Filter (vtkImageGaussianSmooth, vtkContourFilter, vtkMarchingCubes) $\to$ Mapper (vtkPolyDataMapper) $\to$ Actor $\to$ Renderer $\to$ RenderWindow+Interactor.}
+
+\switchcolumn*
+
+% ---------------------------------------------------------------------
+% 3.4 Image processing operations
+% ---------------------------------------------------------------------
+\subsection*{3.4 Image Processing Operations}
+\textbf{Preprocessing.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Denoising: Gaussian (LP linear), median (impulse), bilateral (range+space, edge-preserving), non-local means (patch similarity), BM3D, Total Variation, deep denoisers (DnCNN, Noise2Noise).
+  \item Contrast: histogram equalization; CLAHE (contrast-limited adaptive HE) per tile + clip.
+  \item N4ITK bias-field correction (MRI inhomogeneity, multiplicative low-frequency field).
+  \item Intensity normalization: z-score, min-max, percentile clip, white-stripe, Nyul piecewise-linear.
+  \item Resampling to isotropic spacing; skull stripping; cropping; padding.
+\end{itemize}
+
+\textbf{Registration.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Goal: align moving image to fixed image; $T:\mathbb R^3\to\mathbb R^3$.
+  \item Rigid (6 DOF — 3 translation + 3 rotation); affine (12 DOF + scale + shear); non-rigid: B-spline FFD (free-form deformation, control grid), Demons (optical flow), diffeomorphic LDDMM (large-deformation), SyN (ANTs).
+  \item Similarity metrics: SSD $=\sum(I_f-T(I_m))^2$ (mono-modal), NCC (illumination-invariant), Mutual Information $\mathrm{MI}=H(A)+H(B)-H(A,B)$ (multi-modal MR-CT).
+  \item Optimizer: gradient descent, LBFGS, Powell.
+  \item DL: VoxelMorph, TransMorph.
+\end{itemize}
+
+\textbf{Segmentation.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Thresholding:} Otsu maximizes inter-class variance $\sigma_B^2=w_0w_1(\mu_0-\mu_1)^2$.
+  \item \emph{Region growing:} seed + similarity criterion.
+  \item \emph{Watershed:} gradient = topographic surface; flood from minima; over-segments $\Rightarrow$ marker-controlled.
+  \item \emph{Active contours / Snakes (Kass et al.):} minimize
+  $$E=\int(\alpha|C'|^2+\beta|C''|^2+E_{\text{ext}})\,ds$$
+  $\alpha$ elasticity, $\beta$ rigidity; $E_{\text{ext}}=-|\nabla(G_\sigma * I)|^2$.
+  \item \emph{Level Sets (Osher-Sethian):} embed contour as zero-set of $\phi$; evolve
+  $$\frac{\partial\phi}{\partial t}+F|\nabla\phi|=0$$
+  Chan-Vese: piecewise-constant Mumford-Shah $\to$ no edge needed.
+  \item \emph{Graph cuts:} energy $E=\sum D_p(l_p)+\sum V_{pq}(l_p,l_q)$, min-cut/max-flow $O(V^2E)$ (Boykov-Kolmogorov); GrabCut iterates GMM + graph cut.
+  \item \emph{Atlas-based:} register atlas $\to$ propagate labels; multi-atlas + label fusion (majority vote, STAPLE).
+  \item \emph{Deep learning:}
+    \begin{itemize}[leftmargin=*,nosep]
+      \item \textbf{U-Net} (Ronneberger 2015): symmetric encoder-decoder with skip-connections.
+      \item \textbf{V-Net} (Milletari 2016): 3D, residual blocks, Dice loss $1-\frac{2|A\cap B|}{|A|+|B|}$.
+      \item \textbf{nnU-Net} (Isensee 2021): self-configuring (preprocessing, topology, training); state-of-the-art baseline.
+      \item SegResNet, Attention U-Net, TransUNet, Swin-UNet, SAM-Med2D, MedSAM.
+    \end{itemize}
+\end{itemize}
+
+\textbf{Feature extraction.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Gradients: Sobel, Prewitt, Scharr; Canny edge (smooth $\to$ gradient $\to$ NMS $\to$ hysteresis).
+  \item Laplacian of Gaussian (LoG), DoG, Hessian (vesselness — Frangi filter).
+  \item Texture: GLCM (Haralick: contrast, correlation, energy, homogeneity), LBP, Gabor banks.
+  \item \textbf{Radiomics:} shape (volume, sphericity, elongation), first-order intensity (mean, kurtosis), texture (GLCM, GLRLM, GLSZM, NGTDM, GLDM), wavelet/Laplacian filtered features. \textbf{IBSI} standard for reproducibility.
+\end{itemize}
+
+\textbf{Classification / Detection.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Traditional: SVM (kernel RBF), Random Forest, kNN, AdaBoost — on hand-crafted features.
+  \item Deep CNN: LeNet-5, AlexNet, VGG-16/19, GoogLeNet (Inception), ResNet (skip), DenseNet, EfficientNet (compound scaling).
+  \item Detection: R-CNN, Fast/Faster R-CNN, YOLO, RetinaNet, DETR.
+  \item Vision Transformers: ViT, Swin Transformer, SegFormer.
+  \item Foundation models: SAM (Segment Anything), MedSAM, BiomedCLIP, Med-PaLM (text), LLaVA-Med (multi-modal).
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{3.4 Các phép xử lý ảnh}
+\textbf{Tiền xử lý.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Khử nhiễu: Gauss (LP tuyến tính), median (xung), bilateral (giá trị+không gian, giữ cạnh), non-local means (tương đồng patch), BM3D, Total Variation, deep denoiser (DnCNN, Noise2Noise).
+  \item Tương phản: cân bằng histogram; CLAHE (cân bằng thích nghi có giới hạn) theo ô + cắt đỉnh.
+  \item Hiệu chỉnh từ trường lệch N4ITK (MRI bias field, trường nhân tần số thấp).
+  \item Chuẩn hóa cường độ: z-score, min-max, cắt percentile, white-stripe, Nyul phân đoạn tuyến tính.
+  \item Resample về spacing đẳng hướng; lột sọ; cắt; pad.
+\end{itemize}
+
+\textbf{Đăng ký ảnh (Registration).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Mục tiêu: căn ảnh moving với ảnh fixed; $T:\mathbb R^3\to\mathbb R^3$.
+  \item Cứng (6 DOF — 3 tịnh tiến + 3 quay); affine (12 DOF + tỷ lệ + cắt); phi cứng: B-spline FFD (biến dạng tự do, lưới điều khiển), Demons (optical flow), diffeomorphic LDDMM (biến dạng lớn), SyN (ANTs).
+  \item Hàm tương đồng: SSD $=\sum(I_f-T(I_m))^2$ (đơn modal), NCC (bất biến chiếu sáng), Mutual Information $\mathrm{MI}=H(A)+H(B)-H(A,B)$ (đa modal MR-CT).
+  \item Tối ưu hóa: gradient descent, LBFGS, Powell.
+  \item DL: VoxelMorph, TransMorph.
+\end{itemize}
+
+\textbf{Phân vùng (Segmentation).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Ngưỡng:} Otsu cực đại hóa phương sai liên lớp $\sigma_B^2=w_0w_1(\mu_0-\mu_1)^2$.
+  \item \emph{Region growing:} hạt mầm + tiêu chí tương đồng.
+  \item \emph{Watershed:} gradient = bề mặt địa hình; tràn từ điểm thấp; dễ over-seg $\Rightarrow$ điều khiển bằng marker.
+  \item \emph{Active contour / Snake (Kass):} cực tiểu
+  $$E=\int(\alpha|C'|^2+\beta|C''|^2+E_{\text{ext}})\,ds$$
+  $\alpha$ co giãn, $\beta$ độ cứng; $E_{\text{ext}}=-|\nabla(G_\sigma * I)|^2$.
+  \item \emph{Level Set (Osher-Sethian):} nhúng đường viền là tập-không của $\phi$; tiến hóa
+  $$\frac{\partial\phi}{\partial t}+F|\nabla\phi|=0$$
+  Chan-Vese: Mumford-Shah từng đoạn-hằng $\to$ không cần cạnh.
+  \item \emph{Graph cuts:} năng lượng $E=\sum D_p(l_p)+\sum V_{pq}(l_p,l_q)$, min-cut/max-flow $O(V^2E)$ (Boykov-Kolmogorov); GrabCut lặp GMM + graph cut.
+  \item \emph{Dựa atlas:} đăng ký atlas $\to$ truyền nhãn; multi-atlas + hợp nhãn (đa số, STAPLE).
+  \item \emph{Học sâu:}
+    \begin{itemize}[leftmargin=*,nosep]
+      \item \textbf{U-Net} (Ronneberger 2015): encoder-decoder đối xứng, skip-connection.
+      \item \textbf{V-Net} (Milletari 2016): 3D, khối residual, Dice loss $1-\frac{2|A\cap B|}{|A|+|B|}$.
+      \item \textbf{nnU-Net} (Isensee 2021): tự cấu hình (tiền xử lý, kiến trúc, training); baseline SOTA.
+      \item SegResNet, Attention U-Net, TransUNet, Swin-UNet, SAM-Med2D, MedSAM.
+    \end{itemize}
+\end{itemize}
+
+\textbf{Trích đặc trưng.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Gradient: Sobel, Prewitt, Scharr; cạnh Canny (mịn $\to$ gradient $\to$ NMS $\to$ hysteresis).
+  \item Laplacian of Gaussian (LoG), DoG, Hessian (mạch máu — Frangi filter).
+  \item Texture: GLCM (Haralick: contrast, correlation, energy, homogeneity), LBP, Gabor.
+  \item \textbf{Radiomics:} hình dạng (thể tích, độ cầu, độ kéo dài), bậc một (mean, kurtosis), texture (GLCM, GLRLM, GLSZM, NGTDM, GLDM), đặc trưng wavelet/Laplacian. Chuẩn \textbf{IBSI} để tái lập được.
+\end{itemize}
+
+\textbf{Phân loại / Phát hiện.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Truyền thống: SVM (kernel RBF), Random Forest, kNN, AdaBoost — trên đặc trưng thủ công.
+  \item Deep CNN: LeNet-5, AlexNet, VGG-16/19, GoogLeNet (Inception), ResNet (skip), DenseNet, EfficientNet (scale tổng hợp).
+  \item Phát hiện: R-CNN, Fast/Faster R-CNN, YOLO, RetinaNet, DETR.
+  \item Vision Transformer: ViT, Swin Transformer, SegFormer.
+  \item Foundation model: SAM (Segment Anything), MedSAM, BiomedCLIP, Med-PaLM (văn bản), LLaVA-Med (đa modal).
+\end{itemize}
+
+\switchcolumn*
+
+% ---------------------------------------------------------------------
+% 3.5 Brain tumor detection
+% ---------------------------------------------------------------------
+\subsection*{3.5 Brain Tumor Detection (BraTS context)}
+\textbf{BraTS challenge} (Brain Tumor Segmentation, MICCAI annual since 2012). Provides 4 co-registered MRI modalities per patient:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{T1} — anatomy, gray vs white matter.
+  \item \textbf{T1ce} (post-Gadolinium) — enhancing tumor highlighted (BBB breakdown).
+  \item \textbf{T2} — edema bright.
+  \item \textbf{FLAIR} — edema bright, CSF dark (best for whole tumor).
+\end{itemize}
+
+\textbf{Tumor sub-regions (labels).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{ET} — Enhancing Tumor (hyper-intense T1ce relative to T1).
+  \item \textbf{NCR/NET} — Necrotic / non-enhancing tumor core.
+  \item \textbf{ED} — peritumoral Edema.
+  \item Hierarchical:
+    \begin{itemize}[leftmargin=*,nosep]
+      \item \textbf{WT} (Whole Tumor) $=$ ET $\cup$ NCR $\cup$ ED.
+      \item \textbf{TC} (Tumor Core) $=$ ET $\cup$ NCR.
+      \item \textbf{ET} alone.
+    \end{itemize}
+\end{itemize}
+
+\textbf{Standard pipeline.}
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Skull stripping (BET, ROBEX, HD-BET).
+  \item Co-registration of 4 modalities (rigid to T1 atlas, e.g., SRI24).
+  \item Bias field correction (N4ITK).
+  \item Resample to 1\,mm$^3$ isotropic.
+  \item Intensity normalization (z-score per modality, brain mask).
+  \item Patch / full-volume training of 3D U-Net / nnU-Net.
+  \item Inference + post-processing: connected components, fill holes, conditional random field (CRF), morphology, ensemble (TTA, k-fold).
+\end{enumerate}
+
+\textbf{Evaluation metrics.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Dice} $=\dfrac{2|A\cap B|}{|A|+|B|}\in[0,1]$, harmonic mean of precision/recall.
+  \item \textbf{Jaccard / IoU} $=\dfrac{|A\cap B|}{|A\cup B|}=\dfrac{D}{2-D}$.
+  \item \textbf{Hausdorff95} $=$ 95-th percentile of $\{d(a,B)\}\cup\{d(b,A)\}$ — robust to outliers.
+  \item \textbf{ASSD} $=\dfrac{1}{|S_A|+|S_B|}\!\!\left(\!\sum_{a\in S_A}\!d(a,S_B)\!+\!\!\sum_{b\in S_B}\!d(b,S_A)\!\right)$.
+  \item Sensitivity $=\mathrm{TP/(TP+FN)}$, Specificity $=\mathrm{TN/(TN+FP)}$, Precision, Recall, F1.
+  \item Volumetric similarity, Cohen's $\kappa$, AUC for classification heads.
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{3.5 Phát hiện u não (BraTS)}
+\textbf{Thử thách BraTS} (MICCAI hàng năm từ 2012). Mỗi bệnh nhân có 4 modality MRI đã đăng ký:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{T1} — giải phẫu, chất xám/trắng.
+  \item \textbf{T1ce} (sau Gadolinium) — vùng u tăng quang (hàng rào máu não bị phá).
+  \item \textbf{T2} — phù não sáng.
+  \item \textbf{FLAIR} — phù sáng, dịch não tủy tối (tốt nhất cho whole tumor).
+\end{itemize}
+
+\textbf{Vùng u con (nhãn).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{ET} — Enhancing Tumor (tăng quang T1ce so với T1).
+  \item \textbf{NCR/NET} — hoại tử / không tăng quang.
+  \item \textbf{ED} — phù quanh u.
+  \item Phân cấp:
+    \begin{itemize}[leftmargin=*,nosep]
+      \item \textbf{WT} (Toàn bộ u) $=$ ET $\cup$ NCR $\cup$ ED.
+      \item \textbf{TC} (Lõi u) $=$ ET $\cup$ NCR.
+      \item \textbf{ET} riêng.
+    \end{itemize}
+\end{itemize}
+
+\textbf{Pipeline chuẩn.}
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Lột sọ (BET, ROBEX, HD-BET).
+  \item Đăng ký đồng vị 4 modality (cứng về atlas T1, vd SRI24).
+  \item Hiệu chỉnh bias field (N4ITK).
+  \item Resample về 1\,mm$^3$ đẳng hướng.
+  \item Chuẩn hóa cường độ (z-score mỗi modality, mask não).
+  \item Train 3D U-Net / nnU-Net theo patch hoặc full-volume.
+  \item Suy luận + hậu xử lý: thành phần liên thông, lấp lỗ, CRF, hình thái, ensemble (TTA, k-fold).
+\end{enumerate}
+
+\textbf{Độ đo đánh giá.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Dice} $=\dfrac{2|A\cap B|}{|A|+|B|}\in[0,1]$, trung bình điều hòa precision/recall.
+  \item \textbf{Jaccard / IoU} $=\dfrac{|A\cap B|}{|A\cup B|}=\dfrac{D}{2-D}$.
+  \item \textbf{Hausdorff95} $=$ percentile thứ 95 của $\{d(a,B)\}\cup\{d(b,A)\}$ — kháng outlier.
+  \item \textbf{ASSD} $=\dfrac{1}{|S_A|+|S_B|}\!\!\left(\!\sum_{a\in S_A}\!d(a,S_B)\!+\!\!\sum_{b\in S_B}\!d(b,S_A)\!\right)$.
+  \item Sensitivity $=\mathrm{TP/(TP+FN)}$, Specificity $=\mathrm{TN/(TN+FP)}$, Precision, Recall, F1.
+  \item Tương đồng thể tích, Cohen's $\kappa$, AUC cho head phân loại.
+\end{itemize}
+
+\switchcolumn*
+
+% ---------------------------------------------------------------------
+% 3.6 Paper 1 summary (GAN brain tumor)
+% ---------------------------------------------------------------------
+\subsection*{3.6 Paper 1 — GAN Brain Tumor Segmentation}
+\textbf{Title:} \emph{A Research for Segmentation of Brain Tumors Based on GAN Model.} Multi-scale 3D-GAN evaluated on BraTS 2021.
+
+\textbf{Architecture.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Generator $G$:} 3D Residual U-Net (encoder-decoder with residual blocks, skip connections, 3D convs).
+  \item \textbf{Bridge module:} sits between $G$ and Discriminator; aggregates multi-scale features from several $G$ decoder stages, fuses them, and feeds into $D$ so that $D$ sees both high-level context and low-level boundary details simultaneously.
+  \item \textbf{Discriminator $D$:} judges (input MRI $\oplus$ predicted seg) vs (input $\oplus$ ground truth).
+\end{itemize}
+
+\textbf{Three contributions.}
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Bridge module — fuses multi-scale features into $D$.
+  \item \textbf{Algorithm 1} — dynamically adjusts the number of $D$ training epochs using the linear-regression \emph{slope} of the adversarial loss; if loss is decreasing too fast, train $D$ more (or less) to balance $G$-vs-$D$.
+  \item Combined loss: $\mathcal L=\mathcal L_{\text{Dice}}+\lambda \mathcal L_{\text{MSE-adv}}$.
+\end{enumerate}
+
+\textbf{Results (Dice, BraTS 2021 validation split).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item ET = 82.3\%, WT = 88.6\%, TC = 83.1\% — beats U-Net, V-Net, VoxelGAN, Vox2Vox.
+  \item Also reports Jaccard, Hausdorff95, ASSD vs same baselines.
+\end{itemize}
+
+\textbf{Strengths.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Bridge well-motivated: gives $D$ both context + boundary detail.
+  \item Algorithm 1 is novel and pragmatic — addresses classic GAN G-D imbalance.
+  \item 4 metrics (Dice, Jaccard, HD95, ASSD) and 4 baselines (CNN + GAN families).
+\end{itemize}
+
+\textbf{Weaknesses.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Only validation split from training — no cross-validation, no submission to BraTS server $\Rightarrow$ hard to compare with literature.
+  \item No ablation isolating Bridge vs Algorithm 1 — individual contribution unknown.
+  \item \emph{Paradox:} on ET, GAN gives higher Dice than ResUnet-no-GAN but \emph{worse} HD95 (9.6\,mm vs 6.4\,mm) and ASSD (3.37 vs 2.35) $\Rightarrow$ GAN improved overlap but \emph{degraded boundary}.
+  \item Hyperparams of Algorithm 1 ($k$, $l$, threshold $\beta$) untuned; no theoretical justification for linear regression on adversarial loss.
+  \item No parameter count, training/inference time, no significance tests, no code release.
+  \item Bridge module deserves its own dedicated figure (currently merged in Fig.\,1).
+\end{itemize}
+
+\textbf{Suggested improvements.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Submit to BraTS online server, or 5-fold CV with mean$\pm$std.
+  \item Ablations: Baseline / +Bridge / +Algo1 / +both.
+  \item Analyze ET HD95/ASSD paradox (boundary smoothing artifacts of MSE-adv?).
+  \item Sensitivity analysis on $k,l,\beta$.
+  \item Release source code; report params/FLOPs/runtime; statistical significance (paired Wilcoxon).
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{3.6 Paper 1 — GAN phân vùng u não}
+\textbf{Tiêu đề:} \emph{A Research for Segmentation of Brain Tumors Based on GAN Model.} Multi-scale 3D-GAN, đánh giá trên BraTS 2021.
+
+\textbf{Kiến trúc.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Generator $G$:} 3D Residual U-Net (encoder-decoder với khối residual, skip connection, conv 3D).
+  \item \textbf{Bridge module:} nằm giữa $G$ và Discriminator; tổng hợp đặc trưng đa tỷ lệ từ vài tầng decoder của $G$, hợp nhất rồi đưa vào $D$ để $D$ nhìn được cả ngữ cảnh cấp cao lẫn chi tiết biên cấp thấp.
+  \item \textbf{Discriminator $D$:} phân biệt (MRI $\oplus$ seg dự đoán) vs (MRI $\oplus$ ground truth).
+\end{itemize}
+
+\textbf{Ba đóng góp.}
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Bridge module — hợp đặc trưng đa tỷ lệ vào $D$.
+  \item \textbf{Algorithm 1} — điều chỉnh động số epoch huấn luyện $D$ theo \emph{độ dốc} hồi quy tuyến tính của adversarial loss; nếu loss giảm quá nhanh thì train $D$ thêm (hoặc bớt) để cân bằng $G$-$D$.
+  \item Hàm loss kết hợp: $\mathcal L=\mathcal L_{\text{Dice}}+\lambda \mathcal L_{\text{MSE-adv}}$.
+\end{enumerate}
+
+\textbf{Kết quả (Dice, validation split BraTS 2021).}
+\begin{itemize}[leftmargin=*,nosep]
+  \item ET = 82.3\%, WT = 88.6\%, TC = 83.1\% — vượt U-Net, V-Net, VoxelGAN, Vox2Vox.
+  \item Báo cáo thêm Jaccard, Hausdorff95, ASSD so cùng baselines.
+\end{itemize}
+
+\textbf{Điểm mạnh.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Bridge có động cơ rõ: cho $D$ cả ngữ cảnh + chi tiết biên.
+  \item Algorithm 1 mới và thực dụng — xử lý mất cân bằng kinh điển G-D trong GAN.
+  \item 4 độ đo (Dice, Jaccard, HD95, ASSD) và 4 baseline (CNN + GAN).
+\end{itemize}
+
+\textbf{Điểm yếu.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Chỉ chia validation từ training — không cross-validation, không nộp BraTS server $\Rightarrow$ khó so với cộng đồng.
+  \item Thiếu ablation tách bạch Bridge vs Algorithm 1 — không biết phần nào đóng góp bao nhiêu.
+  \item \emph{Nghịch lý:} với ET, GAN có Dice cao hơn ResUnet không-GAN nhưng HD95 (9.6\,mm vs 6.4\,mm) và ASSD (3.37 vs 2.35) lại \emph{tệ hơn} $\Rightarrow$ GAN cải thiện overlap thể tích nhưng \emph{làm xấu biên}.
+  \item Siêu tham số Algorithm 1 ($k$, $l$, ngưỡng $\beta$) không khảo sát; không có lý thuyết nào biện minh cho việc hồi quy tuyến tính trên loss.
+  \item Không có số tham số, thời gian train/infer, không có kiểm định ý nghĩa thống kê, không công khai code.
+  \item Module Bridge đáng có hình riêng (đang gộp vào Fig.\,1).
+\end{itemize}
+
+\textbf{Đề xuất cải tiến.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Nộp BraTS online server, hoặc 5-fold CV với mean$\pm$std.
+  \item Ablation: Baseline / +Bridge / +Algo1 / +cả hai.
+  \item Phân tích nghịch lý HD95/ASSD ở ET (nghi do MSE-adv làm trơn biên?).
+  \item Khảo sát độ nhạy $k,l,\beta$.
+  \item Công khai mã nguồn; báo cáo params/FLOPs/runtime; kiểm định ý nghĩa (paired Wilcoxon).
+\end{itemize}
+
+\switchcolumn*
+
+% ---------------------------------------------------------------------
+% 3.7 Paper 2 summary (ANN -> DCNN)
+% ---------------------------------------------------------------------
+\subsection*{3.7 Paper 2 — ANN $\to$ DCNN Paradigm Shift Review}
+\textbf{Title:} \emph{Paradigm shift from Artificial Neural Networks (ANNs) to deep Convolutional Neural Networks (DCNNs) in the field of medical image processing.} 2024 review.
+
+\textbf{Thesis.} Past pipeline: hand-crafted feature extraction (SIFT, GLCM, Hu moments) $\to$ shallow ANN classifier. Modern pipeline: end-to-end DCNN learns features directly from raw images.
+
+\textbf{Strengths.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Concrete numerical convolution example with a Sobel kernel applied to a hand X-ray $\Rightarrow$ very accessible for newcomers.
+  \item Two summary tables: ANN-based vs DCNN-based studies — \emph{the "feature extraction" column literally vanishes} in DCNN row.
+  \item Honest about DCNN limitations: data-hungry, prone to overfitting, black-box.
+\end{itemize}
+
+\textbf{Weaknesses.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item No mention of \textbf{Vision Transformers}, \textbf{SAM}, or medical foundation models (Med-PaLM, LLaVA-Med) — yet the paper claims a "paradigm shift" in 2024. The actual ongoing shift (DCNN $\to$ Transformer/Foundation) is ignored. ANN $\to$ DCNN was already widely accepted by 2017.
+  \item Focuses on \textbf{classification}; ignores \textbf{segmentation} (U-Net, nnU-Net) and standard datasets (\textbf{BraTS}, LIDC, CheXpert).
+  \item English-language context only; no \textbf{low-resource language} coverage. Critical for Vietnamese CDSS — labeled corpora missing, mixed VN-EN-Latin terminology, no local medical knowledge graph.
+  \item No \textbf{XAI} (Grad-CAM, conformal prediction, Dempster-Shafer) and no \textbf{uncertainty quantification} — yet the EU AI Act classifies CDSS as \emph{high-risk}, so explainability is mandatory.
+  \item No PRISMA / inclusion-exclusion criteria for a review paper; no positioning vs Litjens 2017 / Esteva 2019 (already authoritative surveys).
+  \item Long, rambling history (1980s--90s) padding; the actually-important CNN mechanism section is too short. AI/ML/DL definition boxes are too basic for a Q1 journal.
+\end{itemize}
+
+\textbf{Takeaway.} Useful intro for newcomers, but for proper publication needs: (i) Transformers + foundation models, (ii) segmentation track + standard datasets, (iii) low-resource language section, (iv) XAI + uncertainty for CDSS, (v) PRISMA methodology and survey-positioning.
+
+\switchcolumn
+
+\subsection*{3.7 Paper 2 — Tổng quan chuyển dịch ANN $\to$ DCNN}
+\textbf{Tiêu đề:} \emph{Paradigm shift from Artificial Neural Networks (ANNs) to deep Convolutional Neural Networks (DCNNs) in the field of medical image processing.} Bài tổng quan 2024.
+
+\textbf{Luận điểm.} Quy trình cũ: trích đặc trưng thủ công (SIFT, GLCM, mô-men Hu) $\to$ ANN nông để phân loại. Quy trình hiện đại: DCNN end-to-end học đặc trưng trực tiếp từ ảnh thô.
+
+\textbf{Điểm mạnh.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Ví dụ tích chập số cụ thể với kernel Sobel áp lên ảnh X-quang bàn tay $\Rightarrow$ rất dễ hiểu cho người mới.
+  \item Hai bảng tổng kết: nghiên cứu dùng ANN vs nghiên cứu dùng DCNN — \emph{cột "feature extraction" biến mất hoàn toàn} ở dòng DCNN.
+  \item Trung thực về hạn chế của DCNN: cần nhiều dữ liệu, dễ overfit, hộp đen.
+\end{itemize}
+
+\textbf{Điểm yếu.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Không nhắc đến \textbf{Vision Transformer}, \textbf{SAM}, hay các foundation model y tế (Med-PaLM, LLaVA-Med) — mà bài lại tuyên bố "paradigm shift" năm 2024. Cuộc chuyển dịch đang xảy ra (DCNN $\to$ Transformer/Foundation) bị bỏ qua. ANN $\to$ DCNN đã được công nhận từ 2017.
+  \item Chỉ tập trung \textbf{phân loại}; bỏ qua \textbf{phân vùng} (U-Net, nnU-Net) và các bộ dữ liệu chuẩn (\textbf{BraTS}, LIDC, CheXpert).
+  \item Bối cảnh chỉ tiếng Anh; không đề cập \textbf{ngôn ngữ low-resource}. Rất quan trọng với CDSS tiếng Việt — thiếu corpus có nhãn, thuật ngữ trộn VN-EN-Latin, chưa có knowledge graph y tế Việt.
+  \item Không bàn \textbf{XAI} (Grad-CAM, conformal prediction, Dempster-Shafer) lẫn \textbf{đo bất định} — nhưng EU AI Act xếp CDSS vào \emph{high-risk} nên giải thích được là bắt buộc.
+  \item Bài tổng quan mà không có PRISMA / tiêu chí lựa chọn-loại trừ; không định vị so với Litjens 2017 / Esteva 2019 (đã là survey kinh điển).
+  \item Phần lịch sử (1980s--90s) dài lan man; phần cơ chế CNN — phần quan trọng — lại quá ngắn. Hộp định nghĩa AI/ML/DL quá cơ bản cho một tạp chí Q1.
+\end{itemize}
+
+\textbf{Tóm lại.} Hữu ích như bài đọc nhập môn, nhưng để xuất bản đàng hoàng cần: (i) Transformer + foundation models, (ii) nhánh segmentation + dataset chuẩn, (iii) phần ngôn ngữ low-resource, (iv) XAI + uncertainty cho CDSS, (v) phương pháp PRISMA và định vị so với survey trước.
+
+\switchcolumn*
+
+% ---------------------------------------------------------------------
+% 3.8 Diagnosis-support applications
+% ---------------------------------------------------------------------
+\subsection*{3.8 Diagnosis-Support Applications}
+\textbf{Use cases.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Triage / worklist prioritization (e.g., critical findings in head CT).
+  \item Second-reader / double-reading (mammography).
+  \item Population screening (chest X-ray TB, retinal DR, breast cancer).
+  \item Surgical planning (3D mesh from CT/MRI for tumor resection).
+  \item Image-guided intervention (real-time fusion US+MRI for biopsy/ablation).
+  \item Quantification: lesion volume, perfusion, ejection fraction.
+  \item Treatment response monitoring (RECIST, longitudinal radiomics).
+\end{itemize}
+
+\textbf{End-to-end CDSS pipeline.}
+DICOM input $\to$ preprocessing (denoise, normalize, register) $\to$ segmentation (U-Net family) $\to$ classification / detection (CNN/ViT) $\to$ uncertainty quantification (MC-Dropout, deep ensembles, conformal prediction) $\to$ explanation (Grad-CAM, Integrated Gradients, attention maps, SHAP) $\to$ structured report (HL7 FHIR DiagnosticReport) $\to$ clinician review.
+
+\textbf{Regulatory.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{FDA 510(k)} / De Novo / PMA in US; AI/ML SaMD action plan; predetermined change control.
+  \item \textbf{CE marking}, \textbf{MDR} (EU 2017/745).
+  \item \textbf{EU AI Act} — CDSS is high-risk: requires risk-management, data governance, technical docs, transparency, human oversight, accuracy/robustness/cybersecurity logs.
+  \item Privacy: HIPAA (US), GDPR (EU), Vietnam Decree 13/2023/ND-CP on personal data.
+\end{itemize}
+
+\textbf{Vietnamese context.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Lacking large-scale Vietnamese-labeled medical corpora (radiology reports, clinical notes).
+  \item Mixed VN-EN-Latin terminology (e.g., "viêm phổi / pneumonia / bronchopneumonia").
+  \item Missing local medical knowledge graph / SNOMED-CT Vietnamese mapping.
+  \item Hospital PACS/HIS heterogeneous; limited GPU; class imbalance for rare endemic diseases.
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{3.8 Ứng dụng hỗ trợ chẩn đoán}
+\textbf{Trường hợp sử dụng.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Phân loại ưu tiên / triage (vd phát hiện CT sọ não nguy kịch).
+  \item Người đọc thứ hai / đọc kép (nhũ ảnh).
+  \item Tầm soát quần thể (X-quang phổi lao, võng mạc tiểu đường, ung thư vú).
+  \item Lập kế hoạch phẫu thuật (mesh 3D từ CT/MRI để cắt u).
+  \item Can thiệp dưới hình ảnh (hợp nhất US+MRI thời gian thực để sinh thiết/đốt).
+  \item Định lượng: thể tích tổn thương, tưới máu, phân suất tống máu.
+  \item Theo dõi đáp ứng điều trị (RECIST, radiomics dọc).
+\end{itemize}
+
+\textbf{Pipeline CDSS đầu cuối.}
+DICOM đầu vào $\to$ tiền xử lý (khử nhiễu, chuẩn hóa, đăng ký) $\to$ phân vùng (họ U-Net) $\to$ phân loại / phát hiện (CNN/ViT) $\to$ đo bất định (MC-Dropout, deep ensembles, conformal prediction) $\to$ giải thích (Grad-CAM, Integrated Gradients, bản đồ chú ý, SHAP) $\to$ báo cáo có cấu trúc (HL7 FHIR DiagnosticReport) $\to$ bác sĩ duyệt.
+
+\textbf{Pháp lý.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{FDA 510(k)} / De Novo / PMA tại Mỹ; kế hoạch SaMD AI/ML; kiểm soát thay đổi đã định trước.
+  \item \textbf{CE marking}, \textbf{MDR} (EU 2017/745).
+  \item \textbf{EU AI Act} — CDSS thuộc nhóm rủi ro cao: yêu cầu quản lý rủi ro, quản trị dữ liệu, tài liệu kỹ thuật, minh bạch, giám sát của người, log độ chính xác/độ bền/an ninh mạng.
+  \item Bảo mật: HIPAA (Mỹ), GDPR (EU), Nghị định 13/2023/NĐ-CP về dữ liệu cá nhân ở Việt Nam.
+\end{itemize}
+
+\textbf{Bối cảnh Việt Nam.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Thiếu corpus y tế tiếng Việt có nhãn quy mô lớn (báo cáo chẩn đoán hình ảnh, ghi chú lâm sàng).
+  \item Thuật ngữ trộn VN-EN-Latin (vd "viêm phổi / pneumonia / bronchopneumonia").
+  \item Chưa có knowledge graph y tế tiếng Việt / ánh xạ SNOMED-CT.
+  \item PACS/HIS bệnh viện không đồng nhất; GPU hạn chế; mất cân bằng lớp với bệnh đặc hữu hiếm.
+\end{itemize}
+
+\switchcolumn*
+
+% ---------------------------------------------------------------------
+% 3.9 Quick reference summary table
+% ---------------------------------------------------------------------
+\subsection*{3.9 Quick Reference Summary}
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}p{1.1cm}p{2.2cm}p{2.5cm}p{2.5cm}@{}}
+\toprule
+Mod. & Best for & Reconstruction & Mesh extraction \\
+\midrule
+MRI & soft tissue, brain, MS & 2D iFFT k-space; SENSE/GRAPPA; CS & MC on T1/FLAIR after seg. \\
+CT & bone, lung, trauma & FBP (ramp); iter MBIR; DL recon & MC on HU threshold (bone $>$300) \\
+US 3D & OB, cardiac, vascular & beamforming; freehand 3D & MC on B-mode envelope (noisy) \\
+PET & oncology, brain metab. & MLEM, OSEM, TOF & threshold SUV $\to$ MC, smooth \\
+X-ray & chest, mammo & none (2D projection) & N/A (unless tomosynth.) \\
+SPECT & cardiac, bone, thyroid & FBP / OSEM & rare \\
+OCT & retina, anterior segment & Fourier-domain iFFT & MC on layer prob. map \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\medskip
+\textbf{Key formulas to remember.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item HU: $\mathrm{HU}=1000(\mu-\mu_w)/\mu_w$.
+  \item Larmor: $\omega_0=\gamma B_0$ ($\gamma_{^1\!H}/2\pi=42.58$ MHz/T).
+  \item FBP: $f(x,y)=\!\int_0^\pi\!\tilde p(x\cos\theta+y\sin\theta,\theta)d\theta$.
+  \item MC edge interp: $\mathbf p=\mathbf p_a+\frac{T-V_a}{V_b-V_a}(\mathbf p_b-\mathbf p_a)$.
+  \item DVR composite: $C_{out}=C_{in}(1-\alpha)+C\alpha$.
+  \item Dice: $D=2|A\cap B|/(|A|+|B|)$; IoU $=D/(2-D)$.
+  \item Otsu: $\arg\max_T w_0w_1(\mu_0-\mu_1)^2$.
+  \item Snake energy: $E=\!\int(\alpha|C'|^2+\beta|C''|^2+E_{\text{ext}})ds$.
+  \item Level set: $\partial\phi/\partial t+F|\nabla\phi|=0$.
+  \item MI: $\mathrm{MI}(A,B)=H(A)+H(B)-H(A,B)$.
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{3.9 Bảng tổng kết tham khảo nhanh}
+\scriptsize
+\begin{tabular}{@{}llll@{}}
+\toprule
+P.thức & Tốt cho & Tái tạo & Trích mesh \\
+\midrule
+MRI & mô mềm, não, MS & iFFT 2D k-space; SENSE/GRAPPA; CS & MC trên T1/FLAIR sau seg \\
+CT & xương, phổi, ch.thương & FBP (ramp); MBIR lặp; DL recon & MC ngưỡng HU (xương $>$300) \\
+US 3D & sản, tim, mạch & beamforming; 3D tự do & MC trên envelope B-mode, nhiễu \\
+PET & ung thư, ch.hóa não & MLEM, OSEM, TOF & ngưỡng SUV $\to$ MC, làm mịn \\
+X-q & ngực, vú & không (chiếu 2D) & N/A (trừ tomosynthesis) \\
+SPECT & tim, xương, giáp & FBP / OSEM & hiếm \\
+OCT & võng mạc, đoạn trước & FT ngược miền Fourier & MC trên bản đồ xác suất lớp \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\medskip
+\textbf{Công thức cần nhớ.}
+\begin{itemize}[leftmargin=*,nosep]
+  \item HU: $\mathrm{HU}=1000(\mu-\mu_w)/\mu_w$.
+  \item Larmor: $\omega_0=\gamma B_0$ ($\gamma_{^1\!H}/2\pi=42.58$ MHz/T).
+  \item FBP: $f(x,y)=\!\int_0^\pi\!\tilde p(x\cos\theta+y\sin\theta,\theta)d\theta$.
+  \item Nội suy cạnh MC: $\mathbf p=\mathbf p_a+\frac{T-V_a}{V_b-V_a}(\mathbf p_b-\mathbf p_a)$.
+  \item Hợp DVR: $C_{out}=C_{in}(1-\alpha)+C\alpha$.
+  \item Dice: $D=2|A\cap B|/(|A|+|B|)$; IoU $=D/(2-D)$.
+  \item Otsu: $\arg\max_T w_0w_1(\mu_0-\mu_1)^2$.
+  \item Năng lượng Snake: $E=\!\int(\alpha|C'|^2+\beta|C''|^2+E_{\text{ext}})ds$.
+  \item Level set: $\partial\phi/\partial t+F|\nabla\phi|=0$.
+  \item MI: $\mathrm{MI}(A,B)=H(A)+H(B)-H(A,B)$.
+\end{itemize}
+
+\end{paracol}

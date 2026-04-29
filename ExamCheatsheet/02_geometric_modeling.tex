@@ -1,0 +1,586 @@
+% ============================================================
+% Section 2: Geometric Modeling — Bilingual EN | VI cheatsheet
+% IT516 Advanced Computer Graphics — HCMIU final exam
+% ============================================================
+
+\begin{paracol}{2}
+
+% ------------------ 2.1 Overview ------------------
+\section*{2. Geometric Modeling}
+\subsection*{2.1 Overview}
+\textbf{Geometric modeling} = mathematical \& algorithmic representation, construction, and manipulation of 2D/3D shapes for graphics, CAD/CAM, simulation, 3D printing, VR/AR, medical imaging.
+
+\textbf{Representations:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Point cloud}: unordered set $P=\{p_i\in\mathbb{R}^3\}$. From LiDAR, photogrammetry, RGB-D. No topology.
+  \item \textbf{Polygonal mesh}: vertices $V$, edges $E$, faces $F$. Triangle (most common, planar, GPU friendly), quad (subdivision/animation), $n$-gon. Euler: $V-E+F=2-2g$ ($g$=genus). \emph{Manifold}: every edge incident to $\le 2$ faces; vertex link is a disk/half-disk. \emph{Watertight}=closed manifold (no boundary).
+  \item \textbf{Parametric surfaces}: $S(u,v)=\sum B_i(u)B_j(v)P_{ij}$. Bezier, B-spline, NURBS. Smooth, exact, but harder to render directly.
+  \item \textbf{Implicit / level sets}: zero-set $\{x:f(x)=0\}$. SDF (signed distance field), metaballs. Easy boolean ops, free topology change.
+  \item \textbf{Volumetric / voxels}: 3D grid $V_{ijk}$. CT/MRI, sparse octree, OpenVDB. High memory.
+  \item \textbf{CSG (Constructive Solid Geometry)}: tree of $\cup,\cap,\setminus$ on primitives.
+  \item \textbf{Subdivision surfaces}: Catmull-Clark, Loop, Doo-Sabin — refine coarse mesh to smooth limit.
+\end{itemize}
+
+\textbf{Pipeline:} acquisition $\to$ registration/alignment $\to$ denoising/outlier removal $\to$ surface reconstruction (triangulation) $\to$ hole filling/repair $\to$ simplification/remeshing $\to$ parameterization/UV $\to$ analysis (curvature, geodesics) $\to$ rendering / export.
+
+\textbf{File formats:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{OBJ} (Wavefront): ASCII, \texttt{v}/\texttt{vn}/\texttt{vt}/\texttt{f}, no topology guarantee.
+  \item \textbf{PLY} (Stanford): ASCII or binary, header-driven, supports per-vertex color/normal/custom attrs.
+  \item \textbf{STL}: triangles only, no shared vertices, used for 3D printing.
+  \item \textbf{OFF}: simple ASCII (vertex count, face count, then data).
+  \item \textbf{FBX} (Autodesk): rigging, animation, materials.
+  \item \textbf{DAE} (COLLADA): XML, exchange format.
+  \item \textbf{glTF/GLB}: web/runtime, PBR materials.
+\end{itemize}
+
+\switchcolumn
+
+\section*{2. Mô hình hình học}
+\subsection*{2.1 Tổng quan}
+\textbf{Geometric modeling} = biểu diễn và xử lý toán học/thuật toán cho hình dạng 2D/3D, dùng trong đồ họa, CAD/CAM, mô phỏng, in 3D, VR/AR, ảnh y khoa.
+
+\textbf{Các dạng biểu diễn:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Đám mây điểm (point cloud)}: tập điểm rời rạc $P=\{p_i\}$. Từ LiDAR, photogrammetry, RGB-D. Không có topology.
+  \item \textbf{Lưới đa giác (mesh)}: đỉnh $V$, cạnh $E$, mặt $F$. Tam giác phổ biến nhất; quad cho subdivision/animation. Euler: $V-E+F=2-2g$. \emph{Manifold}: mỗi cạnh $\le 2$ mặt kề; link đỉnh là đĩa. \emph{Watertight}=manifold kín, không biên.
+  \item \textbf{Mặt tham số}: Bezier, B-spline, NURBS — mượt, chính xác, khó render trực tiếp.
+  \item \textbf{Implicit/level set}: $\{x:f(x)=0\}$. SDF, metaballs. Dễ phép boolean, đổi topology tự do.
+  \item \textbf{Voxel/khối}: lưới 3D, dùng CT/MRI, octree, OpenVDB. Tốn bộ nhớ.
+  \item \textbf{CSG}: cây boolean $\cup,\cap,\setminus$ trên các khối nguyên thủy.
+  \item \textbf{Subdivision}: Catmull-Clark, Loop, Doo-Sabin — tinh chỉnh lưới thô thành mặt mượt.
+\end{itemize}
+
+\textbf{Pipeline:} thu nhận $\to$ căn chỉnh (registration) $\to$ khử nhiễu/loại outlier $\to$ tái tạo bề mặt (triangulation) $\to$ lấp lỗ/sửa lưới $\to$ đơn giản hóa/remesh $\to$ tham số hóa UV $\to$ phân tích (độ cong, geodesic) $\to$ render/xuất.
+
+\textbf{Định dạng file:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{OBJ}: ASCII, dòng \texttt{v}/\texttt{vn}/\texttt{vt}/\texttt{f}.
+  \item \textbf{PLY}: ASCII hoặc nhị phân, header linh hoạt, hỗ trợ thuộc tính tùy biến.
+  \item \textbf{STL}: chỉ tam giác, không chia sẻ đỉnh, in 3D.
+  \item \textbf{OFF}: ASCII đơn giản.
+  \item \textbf{FBX}: rigging, animation.
+  \item \textbf{DAE}: XML, format trao đổi.
+  \item \textbf{glTF/GLB}: chuẩn web/runtime, vật liệu PBR.
+\end{itemize}
+
+\switchcolumn*
+
+% ------------------ 2.2 Mesh Simplification ------------------
+\subsection*{2.2 Mesh Simplification}
+\textbf{Goal}: reduce triangle count $|F|$ from $N\to N'\!\ll\!N$ while preserving shape, attributes (UV, color, normal), and topology where possible.
+
+\textbf{Algorithms:}
+\begin{enumerate}[leftmargin=*,nosep]
+  \item \textbf{Vertex clustering} (Rossignac \& Borrel 1993). Overlay 3D grid; collapse all vertices in each cell to one representative (centroid or quadric-optimal). $O(N)$, very fast, low quality, topology may change. Used as out-of-core preprocess.
+  \item \textbf{Vertex decimation} (Schroeder 1992). Iteratively remove "removable" vertices (classified by curvature/feature angle), retriangulate hole. Keeps subset of original vertices.
+  \item \textbf{Edge collapse + Quadric Error Metric (QEM)} (Garland \& Heckbert 1997). Most popular, high quality. \emph{Math:}
+    \begin{itemize}[leftmargin=1.2em,nosep]
+      \item Each face has plane $\pi=(a,b,c,d)^T$ with $a^2+b^2+c^2=1$. Squared distance from $v=(x,y,z,1)^T$ to plane: $(\pi^T v)^2 = v^T(\pi\pi^T)v$.
+      \item Per-vertex \emph{quadric} $Q_v = \sum_{\pi\in\text{planes}(v)} \pi\pi^T$ (a $4{\times}4$ symmetric PSD).
+      \item Cost of collapsing edge $(v_i,v_j)\to\bar v$: $E(\bar v)=\bar v^T(Q_i+Q_j)\bar v$.
+      \item Optimal $\bar v$: solve $\partial E/\partial \bar v=0$, i.e., set top $3\times4$ block of $Q_i+Q_j$ to identity-target; if invertible, $\bar v=Q'^{-1}(0,0,0,1)^T$. Else fall back to midpoint or endpoint with minimum $E$.
+      \item Maintain min-heap keyed on $E$; pop, collapse, update neighbors' quadrics ($Q_{\bar v}=Q_i+Q_j$) and edge costs.
+    \end{itemize}
+  \item \textbf{Progressive meshes} (Hoppe 1996). Store base mesh $M^0$ + sequence of vertex splits $\{vs_i\}$ enabling continuous LOD, streaming, geomorph.
+  \item \textbf{Edge collapse with attribute quadrics} (extended QEM): augment $Q$ to handle color, UV, normals as extra dims.
+\end{enumerate}
+
+\textbf{Quality metrics:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Hausdorff distance}: $d_H(A,B)=\max(\sup_{a\in A}\inf_{b\in B}\|a-b\|,\,\sup_b\inf_a\|a-b\|)$.
+  \item \textbf{RMS error}: $\sqrt{\tfrac{1}{|A|}\int_A d(a,B)^2 dA}$ — Metro tool (Cignoni 1998).
+  \item Normal angle deviation, visual fidelity (perceptual).
+\end{itemize}
+
+\textbf{Applications}: real-time rendering LOD, network streaming, mobile/VR, collision proxy, mip-map of geometry.
+
+\switchcolumn
+
+\subsection*{2.2 Đơn giản hóa lưới}
+\textbf{Mục tiêu}: giảm số tam giác $|F|$ trong khi giữ hình dạng, thuộc tính (UV, màu, pháp tuyến), và topology.
+
+\textbf{Thuật toán:}
+\begin{enumerate}[leftmargin=*,nosep]
+  \item \textbf{Vertex clustering} (Rossignac \& Borrel 1993). Phủ lưới 3D grid; mọi đỉnh trong cùng cell gộp làm một (centroid hoặc QEM-optimal). $O(N)$, rất nhanh, chất lượng thấp, có thể đổi topology. Hữu dụng tiền xử lý dữ liệu lớn.
+  \item \textbf{Vertex decimation} (Schroeder 1992). Lặp xóa các đỉnh "có thể xóa" (đánh giá theo độ cong, góc đặc trưng), tam giác hóa lại lỗ. Giữ tập con đỉnh gốc.
+  \item \textbf{Edge collapse + QEM} (Garland \& Heckbert 1997). Phổ biến nhất, chất lượng cao.
+    \begin{itemize}[leftmargin=1.2em,nosep]
+      \item Mỗi mặt có mặt phẳng $\pi=(a,b,c,d)^T$, $a^2+b^2+c^2=1$. Khoảng cách bình phương từ $v$ đến $\pi$: $(\pi^T v)^2 = v^T(\pi\pi^T)v$.
+      \item Quadric mỗi đỉnh: $Q_v=\sum_\pi \pi\pi^T$ ($4{\times}4$ đối xứng PSD).
+      \item Chi phí gộp cạnh $(v_i,v_j)\to\bar v$: $E(\bar v)=\bar v^T(Q_i+Q_j)\bar v$.
+      \item Tối ưu $\bar v$ bằng giải $\partial E/\partial \bar v=0$; nếu suy biến dùng trung điểm.
+      \item Heap nhỏ nhất theo $E$; pop, collapse, cập nhật $Q$ và chi phí lân cận.
+    \end{itemize}
+  \item \textbf{Progressive meshes} (Hoppe 1996). Lưu mesh gốc $M^0$ và chuỗi vertex split, hỗ trợ LOD liên tục, streaming, geomorph.
+  \item \textbf{QEM mở rộng}: $Q$ có thêm dimension cho màu/UV/normal.
+\end{enumerate}
+
+\textbf{Đo chất lượng:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Hausdorff}: $d_H(A,B)=\max(\sup\inf,\sup\inf)$.
+  \item \textbf{RMS}: căn quân phương khoảng cách (Metro tool).
+  \item Lệch normal, đánh giá thị giác.
+\end{itemize}
+
+\textbf{Ứng dụng}: LOD real-time, streaming mạng, mobile/VR, collision proxy, mip-map hình học.
+
+\switchcolumn*
+
+% ------------------ 2.3 Triangulation ------------------
+\subsection*{2.3 Triangulation (Point Cloud $\to$ Mesh)}
+
+\textbf{Delaunay triangulation (DT)}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Definition (empty-circle property)}: triangulation $T$ of $P\subset\mathbb{R}^2$ is Delaunay iff for every triangle, its circumcircle contains no other point of $P$ in its interior. 3D: empty circumsphere.
+  \item \emph{Optimality}: maximizes the minimum angle $\Rightarrow$ avoids slivers (best in lex-order of angle vectors). Unique if no 4 cocircular points.
+  \item \emph{Dual} of \textbf{Voronoi diagram}: $V_i=\{x:\|x-p_i\|\le\|x-p_j\|\forall j\}$. Connect $p_i,p_j$ iff their Voronoi cells share an edge.
+  \item \emph{Complexity (2D)}: $O(N\log N)$.
+  \item \emph{Algorithms}:
+    \begin{itemize}[leftmargin=1em,nosep]
+      \item \textbf{Incremental insertion + edge flip} (Lawson). Insert point, locate triangle, split into 3, flip non-Delaunay edges (use in-circle test).
+      \item \textbf{Bowyer–Watson} (incremental, dual view, see pseudocode).
+      \item \textbf{Divide \& Conquer} (Guibas \& Stolfi) $O(N\log N)$.
+      \item \textbf{Sweep-line} (Fortune, primarily Voronoi).
+    \end{itemize}
+  \item \emph{In-circle predicate} for triangle $abc$ and query $d$ (CCW): $d$ is inside circumcircle iff
+  \[\det\!\begin{pmatrix}a_x{-}d_x & a_y{-}d_y & \|a{-}d\|^2\\ b_x{-}d_x & b_y{-}d_y & \|b{-}d\|^2\\ c_x{-}d_x & c_y{-}d_y & \|c{-}d\|^2\end{pmatrix}>0.\]
+\end{itemize}
+
+\textbf{Bowyer–Watson algorithm:}
+
+\begin{algorithm}[H]
+\scriptsize
+\SetAlgoLined
+\KwIn{Points $P$}
+\KwOut{Delaunay triangulation $T$}
+$T \leftarrow \{$super-triangle containing all $P\}$\;
+\ForEach{point $p\in P$}{
+  $\mathcal{B} \leftarrow \{t\in T :\, p\in \text{circumcircle}(t)\}$ \tcp*{bad triangles}
+  $\mathcal{P} \leftarrow$ boundary edges of $\mathcal{B}$ that are not shared by two bad triangles \tcp*{polygon hole}
+  $T \leftarrow T \setminus \mathcal{B}$\;
+  \ForEach{edge $e \in \mathcal{P}$}{
+    add triangle formed by $e$ and $p$ to $T$\;
+  }
+}
+remove all triangles touching the super-triangle\;
+\Return $T$\;
+\caption{Bowyer–Watson Delaunay}
+\end{algorithm}
+
+\textbf{Constrained Delaunay (CDT)}: enforce specified edges; relaxation: edge $(u,v)$ is locally Delaunay if no constrained edge separates $u,v$ from a fourth point. Used in GIS, mesh generation.
+
+\textbf{3D point-cloud surface reconstruction:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Ball Pivoting Algorithm (BPA)} (Bernardini 1999). Pivot a ball of radius $\rho$ around boundary edges; whenever it touches three points without containing any others, form triangle. Sensitive to $\rho$ vs sampling density. $O(N\log N)$ with KD-tree.
+  \item \textbf{Poisson Surface Reconstruction} (Kazhdan, Bolitho, Hoppe 2006). Treat oriented points as samples of a vector field $\vec V$ approximating gradient of indicator function $\chi$; solve $\nabla\!\cdot\!\nabla\chi=\nabla\!\cdot\!\vec V$ on octree, extract iso-surface via Marching Cubes. Smooth, watertight, robust to noise. \emph{Screened Poisson} (2013) adds point-fitting term.
+  \item \textbf{$\alpha$-shapes} (Edelsbrunner). Generalization of convex hull: from DT keep simplices with circumradius $\le\alpha$. $\alpha\!\to\!\infty$: convex hull; $\alpha\!\to\!0$: just points.
+  \item \textbf{Marching Cubes} (Lorensen \& Cline 1987). For implicit/scalar volume: per cube of 8 corners, sign pattern indexes into 256-entry lookup table (15 base cases by symmetry); produce 0–4 triangles. Linearly interpolate iso-vertex on edges. \emph{Marching Tetrahedra} avoids ambiguities.
+  \item \textbf{Greedy Projection Triangulation} (Marton, PCL). Project local neighborhood to tangent plane (from PCA normal), incrementally grow front by adding triangles that meet angle/edge-length thresholds.
+  \item \textbf{Convex hull / Gift wrap / QuickHull}: only for convex point sets. 3D QuickHull is $O(N\log N)$ avg.
+  \item \textbf{Crust / Cocone} (Amenta, Bern, Dey): theoretically guaranteed reconstruction from $\epsilon$-sampled smooth surfaces, uses DT and Voronoi poles.
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{2.3 Tam giác hóa (Point Cloud $\to$ Lưới)}
+
+\textbf{Delaunay triangulation (DT)}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Định nghĩa (vòng tròn rỗng)}: tam giác hóa $T$ của $P\subset\mathbb{R}^2$ là Delaunay khi mỗi tam giác có vòng ngoại tiếp không chứa điểm khác bên trong. 3D: hình cầu ngoại tiếp rỗng.
+  \item \emph{Tính tối ưu}: cực đại góc nhỏ nhất $\Rightarrow$ tránh tam giác "lưỡi dao". Duy nhất nếu không có 4 điểm đồng viên.
+  \item \emph{Đối ngẫu của \textbf{Voronoi}}: cell $V_i=\{x:\|x-p_i\|\le\|x-p_j\|\}$; nối $p_i,p_j$ nếu cell chia cạnh.
+  \item Độ phức tạp 2D: $O(N\log N)$.
+  \item Thuật toán:
+    \begin{itemize}[leftmargin=1em,nosep]
+      \item \textbf{Incremental + edge flip} (Lawson): chèn điểm, định vị, chia 3 tam giác, flip cạnh không Delaunay (in-circle test).
+      \item \textbf{Bowyer–Watson} (incremental).
+      \item \textbf{Chia để trị} $O(N\log N)$.
+      \item \textbf{Sweep-line} (Fortune, chủ yếu cho Voronoi).
+    \end{itemize}
+  \item \emph{Phép thử in-circle} cho $abc,d$ (CCW): định thức $3\times3$ với cột là lệch tọa độ và bình phương khoảng cách; $>0\Leftrightarrow d$ trong vòng ngoại tiếp.
+\end{itemize}
+
+\textbf{Bowyer–Watson:} (xem pseudocode bên cột tiếng Anh)
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Khởi tạo $T$ với super-triangle bao toàn bộ $P$.
+  \item Với mỗi $p$: tìm tam giác "xấu" có $p$ trong vòng ngoại tiếp; lấy biên đa giác từ chúng; xóa và nối lại với $p$.
+  \item Cuối cùng xóa tam giác kề super-triangle.
+\end{enumerate}
+
+\textbf{Constrained Delaunay (CDT)}: ép giữ các cạnh chỉ định; locally Delaunay khi không có cạnh constraint chia cách. Dùng trong GIS, sinh lưới.
+
+\textbf{Tái tạo bề mặt từ point cloud 3D:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Ball Pivoting (BPA)} (Bernardini 1999): lăn quả bóng bán kính $\rho$ quanh cạnh biên; khi chạm 3 điểm mà không chứa điểm khác $\to$ tạo tam giác. Phải chọn $\rho$ phù hợp mật độ.
+  \item \textbf{Poisson Reconstruction} (Kazhdan 2006): coi điểm có normal là gradient của hàm chỉ thị $\chi$; giải $\nabla\!\cdot\!\nabla\chi = \nabla\!\cdot\!\vec V$ trên octree, trích iso-surface bằng Marching Cubes. Mượt, watertight, kháng nhiễu. \emph{Screened Poisson} (2013) thêm constraint khớp điểm.
+  \item \textbf{$\alpha$-shapes}: tổng quát hóa bao lồi; từ DT giữ simplex có bán kính ngoại tiếp $\le\alpha$.
+  \item \textbf{Marching Cubes} (1987): mỗi cube 8 góc, dấu các góc index vào bảng 256 (15 case cơ bản); sinh 0–4 tam giác, nội suy tuyến tính trên cạnh. \emph{Marching Tetrahedra} tránh ambiguity.
+  \item \textbf{Greedy Projection} (PCL/Marton): chiếu vùng lân cận lên mặt phẳng tiếp tuyến, mở rộng front theo ngưỡng góc/độ dài.
+  \item \textbf{Convex hull} (QuickHull 3D): chỉ với tập lồi.
+  \item \textbf{Crust / Cocone} (Amenta): có đảm bảo lý thuyết với $\epsilon$-sampling từ mặt mượt; dùng Voronoi poles.
+\end{itemize}
+
+\switchcolumn*
+
+% ------------------ 2.4 Hole Filling ------------------
+\subsection*{2.4 Hole Filling}
+
+\textbf{Boundary detection (manifold mesh)}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Half-edge with no twin / edge with exactly 1 incident face $\Rightarrow$ \emph{boundary edge}.
+  \item Walk boundary edges to extract \emph{boundary loops} (each hole = one loop).
+  \item Algorithm: pick unmarked boundary edge; from its end vertex, follow next boundary edge around the umbrella until back to start.
+\end{itemize}
+
+\textbf{Hole filling families:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Liepa (2003)}: classic 3-stage triangulation–refinement–fairing.
+    \begin{enumerate}[leftmargin=1.2em,nosep]
+      \item \emph{Min-weight triangulation} of boundary loop. Weight $w(t){=}(\text{area},\text{dihedral})$ lex. DP: $W(i,j){=}\min_{i<m<j} W(i,m){+}W(m,j){+}w(\triangle v_iv_mv_j)$, $O(n^3)$.
+      \item \emph{Refinement}: subdivide patch triangles whose edge length far from surrounding density (relax via centroid-split + edge swap).
+      \item \emph{Fairing}: minimize membrane/thin-plate energy via Laplacian/biharmonic smoothing on patch interior, boundary fixed.
+    \end{enumerate}
+  \item \textbf{Advancing front}: start at boundary, repeatedly add best triangle (smallest angle / closest pair) until front closes.
+  \item \textbf{RBF-based} (Carr, Branch \& Olague): fit radial basis function $\phi(\|x-x_i\|)$ on boundary points + normals, evaluate iso-surface to plug hole. Smooth, $C^\infty$, expensive globally.
+  \item \textbf{Poisson hole filling} (Zhao, Gao, Lin 2007): solve Poisson equation for vertex positions over patch.
+  \item \textbf{Volumetric} (Curless \& Levoy 1996): rasterize mesh to SDF in voxel grid, diffuse/extend SDF into hole, extract surface via Marching Cubes. Robust but loses detail.
+  \item \textbf{Context-based / template-based} (Sharf, Pauly, Bischoff): search the mesh for self-similar patches and copy.
+  \item \textbf{MLS-based} (Jun 2005): moving least squares fit on boundary normals/positions.
+\end{itemize}
+
+\textbf{NFD — Normal Field Diffusion} (user's project, MeshLab plugin):
+\begin{enumerate}[leftmargin=*,nosep]
+  \item \textbf{Step 1 — Hole detection}: find boundary loops by walking border half-edges; each loop $L_h$ stored as ordered vertex indices, validated by size $3\le|L_h|\le$ \texttt{MaxHoleSize}.
+  \item \textbf{Step 2 — Boundary analysis}: for each boundary vertex, compute \emph{normal} (area-weighted from one-ring) and \emph{discrete mean curvature}.
+  \item \textbf{Step 3 — Initial triangulation}: build local frame from average boundary normal $\bar{\mathbf n}=\sum \mathbf n_i/\|\cdot\|$, project boundary loop to 2D plane $(u,v)$, triangulate (2D Delaunay/ear-clipping), insert interior Steiner vertices on a regular grid; lift back to 3D as flat patch.
+  \item \textbf{Step 4 — Normal field diffusion (CORE)}: solve heat equation on patch graph for each component $k\in\{x,y,z\}$ of normal,
+    $\partial n_k/\partial t = \Delta n_k$, Dirichlet BC $n_k|_{\partial\Omega}=n_{k,\text{fix}}$.
+    Discretize with cotangent Laplacian $L_{ij}=\tfrac12(\cot\alpha_{ij}+\cot\beta_{ij})$ and \emph{implicit Euler}: $(I-\lambda L)\mathbf n_k^{t+1}=\mathbf n_k^t$. Cholesky/$LDL^T$ via Eigen \texttt{SimplicialLDLT}; unconditionally stable. Re-normalize $\|\mathbf n\|=1$ per vertex after iterations.
+  \item \textbf{Step 5 — Laplacian smoothing of positions} (uniform, boundary fixed) — 3 iters to even spacing.
+  \item \textbf{Step 6 — Curvature-guided displacement (spherical-cap)}:
+    \begin{itemize}[leftmargin=1em,nosep]
+      \item Estimate cap height $h$ from boundary geometry: $h = R(1-\cos\bar\theta)$ with $R$ = mean boundary distance to centroid, $\bar\theta = \mathrm{avg}_i\arccos(\mathbf n_i\!\cdot\!\bar{\mathbf n})$ (average is more robust than max).
+      \item Geodesic distance $d_i$ from boundary via Dijkstra (multi-source); normalize $t_i = d_i/\max d_j\in[0,1]$.
+      \item Weight profile $w(t)=\sqrt{2t-t^2}$ (spherical cap, $w(0)=0,w(1)=1$, $w'(0)=\infty\Rightarrow C^1$ at boundary).
+      \item Displace: $v_i' = v_i + h\,w(t_i)\,\mathbf n_i^{\text{diffused}}$ (per-vertex direction $\Rightarrow$ patch follows local curvature).
+    \end{itemize}
+  \item \textbf{Step 7 — Patch merging}: re-index boundary to original mesh vertices (no duplicates), add interior vertices/faces, average colors from neighborhood for visual continuity. Optional Taubin $(\lambda,\mu)=(0.40,-0.44)$ to remove spikes.
+\end{enumerate}
+
+\textbf{Quality criteria:} continuity ($C^0$ position match, $C^1$ tangent match, $C^2$ curvature match), smoothness (low Dirichlet/bending energy), no self-intersection, feature preservation.
+
+\textbf{Challenges}: complex hole topology (islands, multiply-connected), sharp features, large holes, non-manifold input, mesh with handles.
+
+\switchcolumn
+
+\subsection*{2.4 Lấp lỗ (Hole Filling)}
+
+\textbf{Phát hiện biên (mesh manifold)}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Half-edge không có twin / cạnh có đúng 1 mặt $\Rightarrow$ cạnh biên.
+  \item Đi vòng các cạnh biên để trích boundary loop (mỗi lỗ = 1 loop).
+  \item Thuật toán: chọn cạnh biên chưa đánh dấu; từ đỉnh cuối, đi cạnh biên tiếp theo trong umbrella đến khi quay lại.
+\end{itemize}
+
+\textbf{Các họ thuật toán:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Liepa (2003)}: ba giai đoạn.
+    \begin{enumerate}[leftmargin=1.2em,nosep]
+      \item \emph{Min-weight triangulation} loop biên: trọng số (diện tích, góc dihedral) thứ tự lex; DP $O(n^3)$ với $W(i,j)=\min_m W(i,m)+W(m,j)+w(\triangle)$.
+      \item \emph{Refinement}: chia nhỏ tam giác có cạnh quá lớn so với mật độ xung quanh.
+      \item \emph{Fairing}: tối thiểu năng lượng màng/uốn bằng Laplacian/biharmonic, biên cố định.
+    \end{enumerate}
+  \item \textbf{Advancing front}: từ biên, lặp thêm tam giác tốt nhất (góc nhỏ nhất / cặp gần nhất) đến khi front đóng.
+  \item \textbf{RBF}: khớp $\phi(\|x-x_i\|)$ trên điểm/normal biên, lấy iso-surface; mượt $C^\infty$.
+  \item \textbf{Poisson}: giải Poisson cho vị trí đỉnh trên patch.
+  \item \textbf{Volumetric} (Curless–Levoy 1996): rasterize SDF trên voxel grid, diffuse SDF vào lỗ, Marching Cubes. Chắc chắn, mất chi tiết.
+  \item \textbf{Template/context-based}: tìm patch tự tương tự trên mesh và sao chép.
+  \item \textbf{MLS} (Jun 2005): moving least squares trên normal/vị trí biên.
+\end{itemize}
+
+\textbf{NFD — Normal Field Diffusion} (project của bạn, plugin MeshLab):
+\begin{enumerate}[leftmargin=*,nosep]
+  \item \textbf{Bước 1 — Phát hiện lỗ}: đi vòng border half-edge; mỗi loop là dãy chỉ số đỉnh, kiểm tra $3\le|L_h|\le$ \texttt{MaxHoleSize}.
+  \item \textbf{Bước 2 — Phân tích biên}: tính normal (area-weighted một-vòng) và mean curvature rời rạc cho từng đỉnh biên.
+  \item \textbf{Bước 3 — Tam giác hóa khởi tạo}: dựng frame từ $\bar{\mathbf n}=\sum\mathbf n_i/\|\cdot\|$, chiếu loop xuống 2D, tam giác hóa (Delaunay/ear-clip), thêm Steiner trong lưới đều, nâng lên 3D thành patch phẳng.
+  \item \textbf{Bước 4 — Normal Field Diffusion (LÕI)}: giải heat equation $\partial n_k/\partial t = \Delta n_k$ (mỗi component $k$), Dirichlet $n_k|_{\partial\Omega}$ cố định. Rời rạc bằng cotangent Laplacian $L_{ij}=\tfrac12(\cot\alpha+\cot\beta)$, \emph{implicit Euler}: $(I-\lambda L)\mathbf n^{t+1}=\mathbf n^t$. Cholesky $LDL^T$ qua Eigen \texttt{SimplicialLDLT}; ổn định vô điều kiện. Chuẩn hóa $\|\mathbf n\|=1$.
+  \item \textbf{Bước 5 — Laplacian smoothing vị trí} (uniform, biên cố định, 3 iter) để đều khoảng cách.
+  \item \textbf{Bước 6 — Dịch chuyển theo độ cong (chỏm cầu)}:
+    \begin{itemize}[leftmargin=1em,nosep]
+      \item Cao độ vòm $h=R(1-\cos\bar\theta)$, $R$ = bán kính trung bình từ centroid, $\bar\theta=$ trung bình $\arccos(\mathbf n_i\cdot\bar{\mathbf n})$ (trung bình bền hơn max).
+      \item Khoảng cách geodesic $d_i$ từ biên (Dijkstra multi-source), chuẩn hóa $t_i=d_i/\max d_j$.
+      \item Trọng số $w(t)=\sqrt{2t-t^2}$ (chỏm cầu, $w(0)=0$, $w'(0)=\infty$ $\Rightarrow$ $C^1$ ở biên).
+      \item Dịch chuyển: $v_i' = v_i + h\,w(t_i)\,\mathbf n_i^{\text{diffused}}$.
+    \end{itemize}
+  \item \textbf{Bước 7 — Ghép patch}: tái-index biên về đỉnh gốc của mesh (không tạo trùng), thêm đỉnh/mặt nội bộ, lấy màu trung bình lân cận. Tùy chọn Taubin $(\lambda,\mu)=(0.40,-0.44)$ để khử gai.
+\end{enumerate}
+
+\textbf{Tiêu chí chất lượng:} liên tục $C^0/C^1/C^2$, mượt (Dirichlet/bending energy thấp), không tự cắt, giữ chi tiết.
+
+\textbf{Thách thức}: lỗ topology phức tạp (đảo, đa liên thông), chi tiết sắc, lỗ lớn, mesh không manifold, mesh có quai.
+
+\switchcolumn*
+
+% ------------------ 2.5 Noise Removal ------------------
+\subsection*{2.5 Noise Removal / Mesh \& Point Cloud Denoising}
+
+\textbf{Sources of noise}: scanner sensor noise (Kinect $\sigma\!\sim\!$ mm), registration misalignment, photogrammetry artifacts, quantization, reconstruction artifacts.
+
+\textbf{Mesh smoothing:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Uniform Laplacian}: $\mathbf v_i^{(k+1)} = \mathbf v_i^{(k)} + \lambda L(\mathbf v_i)$, $L(\mathbf v_i) = \tfrac{1}{|N(i)|}\sum_{j\in N(i)}(\mathbf v_j - \mathbf v_i)$. Causes \emph{shrinkage} (volume loss) and over-smoothing of features.
+  \item \textbf{Cotangent Laplacian} (more accurate, conformal): $L(\mathbf v_i) = \tfrac{1}{2A_i}\sum_j(\cot\alpha_{ij}+\cot\beta_{ij})(\mathbf v_j-\mathbf v_i)$, $A_i$ = Voronoi area. Discretizes mean curvature: $\Delta\mathbf v = -2H\mathbf n$.
+  \item \textbf{Taubin $\lambda|\mu$ smoothing} (1995): alternate $\lambda>0$ shrink and $\mu<-\lambda<0$ inflate, $|\mu|>\lambda$. Ideally $\tfrac{1}{\lambda}+\tfrac{1}{\mu}=k_{pb}$ (pass-band) keeps low-freq, kills high-freq. Eliminates shrinkage.
+  \item \textbf{Bilateral mesh denoising} (Fleishman 2003 / Jones 2003): per vertex $v$ with normal $\mathbf n$, neighbors $\{q_i\}$:
+    $$\hat v = v + \mathbf n \cdot \frac{\sum_i w_c(\|q_i-v\|)\,w_s(\langle\mathbf n,q_i-v\rangle)\,\langle\mathbf n,q_i-v\rangle}{\sum_i w_c\,w_s}$$
+    where $w_c(d)=e^{-d^2/2\sigma_c^2}$ (spatial), $w_s(h)=e^{-h^2/2\sigma_s^2}$ (signal). Edge-preserving (anisotropic).
+  \item \textbf{Mean curvature flow}: $\partial \mathbf x/\partial t = -H\,\mathbf n$. Implicit (Desbrun 1999): $(I-\lambda L_{cot})\mathbf x^{t+1}=\mathbf x^t$ — unconditionally stable.
+  \item \textbf{Anisotropic diffusion} (Desbrun, Hildebrandt): diffusion coefficient depends on local feature ($\to 0$ near sharp edges).
+  \item \textbf{Bilateral normal filter} (Zheng 2011): smooth normals first, then update positions to match.
+  \item \textbf{$L_0$ mesh smoothing} (He \& Schaefer 2013): minimize $\sum_e \|D(e)\|_0$ — preserves planar regions, sharp edges.
+  \item \textbf{Robust statistics}: replace mean by median in Laplacian for outlier resilience.
+\end{itemize}
+
+\textbf{Point cloud denoising:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Statistical Outlier Removal (SOR)} (PCL): for each point compute mean distance $\mu_i$ to its $k$ nearest neighbors; global $\mu=\mathrm{avg}(\mu_i)$, $\sigma=\mathrm{std}(\mu_i)$; remove $p_i$ if $\mu_i>\mu+\alpha\sigma$ (typical $k=20,\alpha=1.0$).
+  \item \textbf{Radius outlier removal}: discard point with $<n_{\min}$ neighbors within radius $r$.
+  \item \textbf{Voxel-grid downsampling}: replace points in each voxel by centroid (uniform density).
+  \item \textbf{Moving Least Squares (MLS)} (Levin, Alexa): fit local polynomial $g(u,v)$ on tangent plane (PCA), project point onto $g$. Smooths and resamples.
+  \item \textbf{WLOP (Weighted Locally Optimal Projection)} (Huang 2009): iteratively project points to a clean, evenly distributed set; minimizes attraction $\sum\|x_i-p_j\|\theta(\cdot)$ + repulsion.
+  \item \textbf{PCA normal estimation}: covariance of $k$-NN, smallest eigenvalue's eigenvector $=$ normal; sign disambiguated by Riemannian propagation (MST).
+  \item \textbf{Bilateral point cloud filter}: similar to mesh bilateral but on neighborhoods.
+  \item \textbf{RIMLS} (Robust Implicit MLS, Öztireli 2009): robust kernel (Geman-McClure) preserves features.
+  \item \textbf{Learning-based}: PointCleanNet, Total Denoising, score-based diffusion (Luo \& Hu 2021).
+\end{itemize}
+
+\textbf{Edge-preserving} = bilateral, anisotropic, $L_0$, RIMLS.
+
+\textbf{Quality measures}: Hausdorff distance, RMS-to-ground-truth, normal angle error $\arccos(\hat{\mathbf n}\!\cdot\!\mathbf n_{gt})$, feature preservation (chamfer on edge sets).
+
+\switchcolumn
+
+\subsection*{2.5 Khử nhiễu lưới và point cloud}
+
+\textbf{Nguồn nhiễu}: cảm biến scanner (Kinect $\sigma\sim$ mm), lệch registration, photogrammetry, lượng tử hóa, artifact tái tạo.
+
+\textbf{Smoothing trên mesh:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Laplacian đều}: $\mathbf v_i^{(k+1)} = \mathbf v_i^{(k)}+\lambda L(\mathbf v_i)$, $L(\mathbf v_i)=\tfrac{1}{|N(i)|}\sum(\mathbf v_j-\mathbf v_i)$. Gây \emph{co rút} thể tích, làm mòn chi tiết.
+  \item \textbf{Cotangent Laplacian}: $L(\mathbf v_i)=\tfrac{1}{2A_i}\sum(\cot\alpha+\cot\beta)(\mathbf v_j-\mathbf v_i)$, $A_i$ = diện tích Voronoi. Rời rạc mean curvature: $\Delta\mathbf v=-2H\mathbf n$.
+  \item \textbf{Taubin $\lambda|\mu$}: xen kẽ $\lambda>0$ (co) và $\mu<-\lambda$ (giãn). Điều kiện $|\mu|>\lambda$. Pass-band $\tfrac1\lambda+\tfrac1\mu=k_{pb}$. Tránh co rút.
+  \item \textbf{Bilateral mesh denoising} (Fleishman/Jones 2003): với $v$ có normal $\mathbf n$,
+    $\hat v = v + \mathbf n\cdot \tfrac{\sum w_c\,w_s\,\langle\mathbf n,q_i-v\rangle}{\sum w_c\,w_s}$,
+    $w_c=$ Gaussian không gian, $w_s=$ Gaussian tín hiệu — bảo toàn cạnh.
+  \item \textbf{Mean curvature flow}: $\partial\mathbf x/\partial t = -H\mathbf n$. Implicit (Desbrun 1999): $(I-\lambda L_{cot})\mathbf x^{t+1}=\mathbf x^t$, ổn định vô điều kiện.
+  \item \textbf{Khuếch tán bất đẳng hướng}: hệ số khuếch tán nhỏ ở cạnh sắc.
+  \item \textbf{Bilateral normal filter} (Zheng 2011): mượt normal trước, cập nhật vị trí khớp.
+  \item \textbf{$L_0$ smoothing} (He–Schaefer 2013): tối thiểu $\|D(e)\|_0$, giữ vùng phẳng và cạnh.
+  \item \textbf{Thống kê bền}: dùng median thay mean để chống outlier.
+\end{itemize}
+
+\textbf{Khử nhiễu point cloud:}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{SOR}: tính $\mu_i$ = trung bình khoảng cách đến $k$-NN; loại $p_i$ nếu $\mu_i>\mu+\alpha\sigma$ (thường $k=20,\alpha=1.0$).
+  \item \textbf{Radius outlier}: loại điểm có $<n_{\min}$ neighbor trong bán kính $r$.
+  \item \textbf{Voxel downsampling}: thay điểm trong mỗi voxel bằng centroid.
+  \item \textbf{MLS} (Levin): khớp đa thức cục bộ trên mặt phẳng tiếp tuyến (PCA), chiếu điểm.
+  \item \textbf{WLOP} (Huang 2009): chiếu điểm đến tập sạch và phân bố đều, kết hợp lực hút và đẩy.
+  \item \textbf{PCA normal}: hiệp phương sai $k$-NN, eigenvector của giá trị riêng nhỏ nhất là normal; định hướng nhất quán bằng MST.
+  \item \textbf{Bilateral} cho point cloud.
+  \item \textbf{RIMLS} (Öztireli 2009): kernel bền (Geman-McClure) giữ chi tiết.
+  \item \textbf{Học máy}: PointCleanNet, score-based (Luo \& Hu 2021).
+\end{itemize}
+
+\textbf{Bảo toàn cạnh} = bilateral, anisotropic, $L_0$, RIMLS.
+
+\textbf{Đo chất lượng}: Hausdorff, RMS so với ground-truth, sai số góc normal, chamfer trên tập cạnh.
+
+\switchcolumn*
+
+% ------------------ 2.6 Worked example ------------------
+\subsection*{2.6 Worked Example}
+
+\textbf{(A) QEM edge collapse on 4-vertex tetra-fan.}\\
+Vertices $v_1=(0,0,0), v_2=(1,0,0), v_3=(0,1,0), v_4=(1,1,0), v_5=(0.5,0.5,1)$. Faces all share $v_5$ apex on a square base.
+
+\emph{Step 1.} Plane of base face $v_1v_2v_3$: normal $(0,0,1)$, $d=0$, so $\pi=(0,0,1,0)^T$, $\pi\pi^T=\mathrm{diag}(0,0,1,0)$.
+
+\emph{Step 2.} Compute $Q_i=\sum_{\pi\in F(i)}\pi\pi^T$ for each vertex. For base vertices, $Q_i$ accumulates plane $z=0$ once + side planes.
+
+\emph{Step 3.} Candidate edge $(v_1,v_2)$. $Q_{12}=Q_1+Q_2$. Solve $\partial(\bar v^TQ_{12}\bar v)/\partial\bar v=0$ by setting top $3\times4$ rows of $Q_{12}$ replaced as $[I\,|\,0]$ targeted to $(0,0,0,1)^T$. If singular fall back: try midpoint $(0.5,0,0)$ and endpoints, pick min $E$. Suppose $E_{mid}=0.012$ is smallest. Push $(v_1,v_2,0.012,(0.5,0,0))$ to heap. Repeat for all edges; pop min, collapse, update incident $Q$'s.
+
+\textbf{(B) Bowyer–Watson on 4 points} $A=(0,0),B=(2,0),C=(2,2),D=(1,1)$.
+
+\emph{Init} super-triangle $S$ enclosing all (e.g., huge $(-100,-100)$, $(100,-100)$, $(0,100)$). $T=\{S\}$.
+
+\emph{Insert $A$:} $S$ contains $A$ in circumcircle (yes); bad=$\{S\}$, polygon = 3 edges of $S$; new $T = \{SA_1,SA_2,SA_3\}$ (three triangles around $A$).
+
+\emph{Insert $B$:} Find triangles whose circumcircle contains $B$ (some subset). Remove, retriangulate hole boundary fan around $B$.
+
+\emph{Insert $C$:} similar.
+
+\emph{Insert $D$:} $D=(1,1)$ may lie inside circumcircle of $\triangle ABC$ (yes, since $ABC$ is right-isoceles with circumcircle through them; check: circumcenter of $A,B,C=(1,1)$, radius $=\sqrt 2$; $D$ at center is inside) so $\triangle ABC$ is bad; remove, retriangulate cavity into $\triangle ABD,\triangle BCD,\triangle CAD$.
+
+\emph{Cleanup:} delete every triangle touching a super-triangle vertex. Final DT $=\{ABD,BCD,CAD\}$ (the unique DT of these 4 points if no 4 cocircular, else flip-equivalent).
+
+\textbf{(C) Laplacian smoothing — 5-vertex umbrella.} Center $v_0=(0,0,1)$, ring $v_1\!=\!(1,0,0),v_2\!=\!(0,1,0),v_3\!=\!(-1,0,0),v_4\!=\!(0,-1,0)$. Uniform Laplacian on $v_0$:
+$L(v_0)=\tfrac14\sum(v_i-v_0)=\tfrac14(0,0,-4)=(0,0,-1)$.
+With $\lambda=0.5$: $v_0' = (0,0,1)+0.5\cdot(0,0,-1)=(0,0,0.5)$ — moved halfway toward ring centroid. Repeat $\to$ shrinkage.
+
+To prevent shrinkage, follow with Taubin $\mu=-0.53$: $v_0'' = v_0' + (-0.53)\cdot L(v_0')$. Recompute $L(v_0')=\tfrac14\sum(v_i-v_0')=\tfrac14(0,0,-2)=(0,0,-0.5)$, so $v_0''=(0,0,0.5)+(-0.53)(0,0,-0.5)=(0,0,0.765)$ — partially restored.
+
+\switchcolumn
+
+\subsection*{2.6 Ví dụ tính toán}
+
+\textbf{(A) QEM edge collapse trên fan 5 đỉnh.}\\
+Đỉnh: $v_1\!=\!(0,0,0)$, $v_2\!=\!(1,0,0)$, $v_3\!=\!(0,1,0)$, $v_4\!=\!(1,1,0)$, đỉnh chóp $v_5=(0.5,0.5,1)$.
+
+\emph{B1.} Mặt phẳng đáy có normal $(0,0,1)$, $\pi=(0,0,1,0)$, $\pi\pi^T=\mathrm{diag}(0,0,1,0)$.
+
+\emph{B2.} $Q_i=\sum_{\pi\in F(i)}\pi\pi^T$ cộng dồn các mặt kề.
+
+\emph{B3.} Cạnh $(v_1,v_2)$: $Q_{12}=Q_1+Q_2$. Giải $\nabla(\bar v^T Q_{12}\bar v)=0$. Nếu suy biến, thử trung điểm $(0.5,0,0)$ và hai endpoint, chọn $E$ nhỏ nhất. Đẩy vào heap; pop nhỏ nhất; collapse; cập nhật $Q$ các đỉnh kề.
+
+\textbf{(B) Bowyer–Watson 4 điểm} $A=(0,0),B=(2,0),C=(2,2),D=(1,1)$.
+
+\emph{Init:} super-triangle $S$ rất lớn bao toàn bộ. $T=\{S\}$.
+
+\emph{Chèn $A$:} $S$ có $A$ trong vòng ngoại tiếp; bad=$\{S\}$; xóa $S$, tạo 3 tam giác từ 3 cạnh $S$ với $A$.
+
+\emph{Chèn $B$, $C$:} tương tự.
+
+\emph{Chèn $D=(1,1)$:} $\triangle ABC$ có tâm $(1,1)$, bán kính $\sqrt2$, $D$ ở chính tâm $\Rightarrow$ trong vòng. $\triangle ABC$ bad; xóa, lấp khoang bằng $\triangle ABD,\triangle BCD,\triangle CAD$.
+
+\emph{Cleanup:} xóa tam giác kề super vertex. DT cuối cùng: $\{ABD,BCD,CAD\}$.
+
+\textbf{(C) Laplacian smoothing — umbrella 5 đỉnh.}\\ Tâm $v_0{=}(0,0,1)$; vòng $(1,0,0)$, $(0,1,0)$, $({-}1,0,0)$, $(0,{-}1,0)$.
+
+$L(v_0)=\tfrac14\sum(v_i-v_0)=(0,0,-1)$.
+Với $\lambda=0.5$: $v_0'=(0,0,0.5)$ — di chuyển nửa đường về centroid vòng (co rút).
+
+Bù bằng Taubin $\mu=-0.53$: $L(v_0')=(0,0,-0.5)$; $v_0''=(0,0,0.5)+(-0.53)(0,0,-0.5)=(0,0,0.765)$ — phục hồi một phần.
+
+\switchcolumn*
+
+% ------------------ 2.7 Reference Table ------------------
+\subsection*{2.7 Quick Reference Table}
+
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}p{2.4cm}p{1.4cm}p{1.5cm}p{1.5cm}p{1.9cm}p{2.2cm}@{}}
+\toprule
+\textbf{Algorithm} & \textbf{Input} & \textbf{Output} & \textbf{Cmplx.} & \textbf{Key param.} & \textbf{When to use} \\
+\midrule
+Vertex clustering & mesh & coarse mesh & $O(N)$ & grid cell size & out-of-core, fast LOD \\
+Vertex decimation & mesh & coarse mesh & $O(N\log N)$ & feature angle & moderate quality \\
+QEM edge collapse & mesh & coarse mesh & $O(N\log N)$ heap & target \#faces & best quality LOD \\
+Progressive mesh & mesh & PM stream & $O(N\log N)$ & — & streaming, geomorph \\
+Delaunay (B-W) & 2D points & DT & $O(N\log N)$ avg & — & quality 2D mesh \\
+Constrained DT & pts + edges & CDT & $O((N+k)\log N)$ & constraint set & GIS, FEM domain \\
+Ball Pivoting & oriented pts & mesh & $O(N\log N)$ & ball radius $\rho$ & uniform-density scan \\
+Poisson Recon & oriented pts & watertight mesh & $O(N\log N)$ octree & depth $d$, samp/node & noisy scans \\
+$\alpha$-shapes & 3D pts & mesh & $O(N^2)$ 3D & $\alpha$ & coarse hull family \\
+Marching Cubes & scalar volume & mesh & $O(K^3)$ & iso-value & SDF/volume data \\
+Greedy proj. tri. & oriented pts & mesh & $O(N\log N)$ & search radius, ang. & PCL pipeline \\
+Liepa hole fill & hole loop & patch & $O(n^3)$ DP & weight $(A,\theta)$ & generic small holes \\
+Advancing front & loop & patch & $O(n^2)$ & angle threshold & moderate holes \\
+RBF fill & loop\,+\,nrm & patch & $O(n^3)$ solve & kernel $\phi$ & smooth $C^\infty$ \\
+Volumetric fill & mesh & repaired mesh & $O(K^3)$ voxels & voxel size & topology fix \\
+NFD hole fill & mesh+hole & patch & $O(n)$ Cholesky & $\lambda,$ iters & curvature-aware \\
+Uniform Laplacian & mesh & smoothed & $O(N)$/iter & $\lambda$, iter & quick smooth \\
+Cotangent Lap. & mesh & smoothed & $O(N)$/iter & $\lambda$, iter & accurate, conformal \\
+Taubin $\lambda|\mu$ & mesh & smoothed & $O(N)$/iter & $\lambda,\mu$ & no shrink \\
+Bilateral mesh & mesh & smoothed & $O(Nk)$ & $\sigma_c,\sigma_s$ & feature-preserving \\
+Mean curv. flow & mesh & smoothed & solve/iter & step $\Delta t$ & PDE smoothing \\
+$L_0$ smoothing & mesh & smoothed & ADMM iters & $\beta$ & sharp-edge cleanup \\
+SOR & point cloud & cleaner & $O(Nk)$ kNN & $k,\alpha$ & remove outliers \\
+Radius outlier & pts & cleaner & $O(N)$ kdtree & $r,n_{\min}$ & sparse outliers \\
+Voxel grid & pts & down\-sampled & $O(N)$ & voxel size & uniform resamp. \\
+MLS proj. & pts & smooth pts & $O(Nk)$ & poly. deg & smooth+resamp \\
+WLOP & pts & even pts & iterative & $h,\mu$ & even distribution \\
+PCA normal est. & pts & normals & $O(Nk)$ & $k$ & normal init for recon \\
+RIMLS & pts & smooth pts & iter & robust $\sigma_r$ & feature preserving \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\switchcolumn
+
+\subsection*{2.7 Bảng tham chiếu nhanh}
+
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}p{2.4cm}p{1.4cm}p{1.5cm}p{1.5cm}p{1.9cm}p{2.2cm}@{}}
+\toprule
+\textbf{Thuật toán} & \textbf{Đầu vào} & \textbf{Đầu ra} & \textbf{Phức tạp} & \textbf{T.số chính} & \textbf{Khi nào dùng} \\
+\midrule
+Vertex clustering & mesh & mesh thô & $O(N)$ & cỡ ô grid & LOD nhanh, dữ liệu lớn \\
+Vertex decimation & mesh & mesh thô & $O(N\log N)$ & góc đặc trưng & chất lượng vừa \\
+QEM collapse & mesh & mesh thô & $O(N\log N)$ heap & số face đích & LOD chất lượng cao \\
+Progressive mesh & mesh & PM & $O(N\log N)$ & — & streaming, geomorph \\
+Delaunay (B-W) & điểm 2D & DT & $O(N\log N)$ & — & lưới 2D chất lượng \\
+CDT & điểm + cạnh & CDT & $O((N+k)\log N)$ & tập constraint & GIS, FEM \\
+Ball Pivoting & điểm + normal & mesh & $O(N\log N)$ & bán kính $\rho$ & scan đều mật độ \\
+Poisson Recon & điểm + normal & mesh kín & $O(N\log N)$ & depth, samp/node & scan nhiễu \\
+$\alpha$-shapes & điểm 3D & mesh & $O(N^2)$ & $\alpha$ & họ bao thô \\
+Marching Cubes & volume & mesh & $O(K^3)$ & iso-value & SDF/volume \\
+Greedy proj. & điểm + normal & mesh & $O(N\log N)$ & bán kính, góc & pipeline PCL \\
+Liepa fill & loop biên & patch & $O(n^3)$ DP & $(A,\theta)$ & lỗ nhỏ tổng quát \\
+Advancing front & loop & patch & $O(n^2)$ & ngưỡng góc & lỗ vừa \\
+RBF fill & loop\,+\,nrm & patch & $O(n^3)$ & kernel $\phi$ & lỗ mượt $C^\infty$ \\
+Volumetric fill & mesh & mesh sửa & $O(K^3)$ voxel & cỡ voxel & sửa topology \\
+NFD fill & mesh+lỗ & patch & $O(n)$ Cholesky & $\lambda$, số iter & lỗ theo độ cong \\
+Laplacian đều & mesh & mượt & $O(N)$/iter & $\lambda$, iter & smooth nhanh \\
+Cotangent Lap. & mesh & mượt & $O(N)$/iter & $\lambda$, iter & chính xác, conformal \\
+Taubin $\lambda|\mu$ & mesh & mượt & $O(N)$/iter & $\lambda,\mu$ & không co rút \\
+Bilateral mesh & mesh & mượt & $O(Nk)$ & $\sigma_c,\sigma_s$ & giữ cạnh \\
+Mean curv. flow & mesh & mượt & solve/iter & $\Delta t$ & smooth PDE \\
+$L_0$ smoothing & mesh & mượt & ADMM & $\beta$ & dọn cạnh sắc \\
+SOR & point cloud & sạch hơn & $O(Nk)$ & $k,\alpha$ & loại outlier \\
+Radius outlier & điểm & sạch hơn & $O(N)$ kdtree & $r,n_{\min}$ & outlier rời rạc \\
+Voxel grid & điểm & down\-sample & $O(N)$ & cỡ voxel & lấy mẫu đều \\
+MLS proj. & điểm & mượt & $O(Nk)$ & bậc đa thức & smooth+resamp \\
+WLOP & điểm & đều & lặp & $h,\mu$ & phân bố đều \\
+PCA normal & điểm & normal & $O(Nk)$ & $k$ & init normal \\
+RIMLS & điểm & mượt & lặp & $\sigma_r$ bền & giữ chi tiết \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\switchcolumn*
+
+% ------------------ 2.8 Memory aids ------------------
+\subsection*{2.8 Memory Aids / Pitfalls}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Cotangent weights} can be \emph{negative} on obtuse triangles $\to$ matrix loses M-property, possible flips. Mitigate via intrinsic Delaunay.
+  \item \emph{Implicit Euler} for diffusion: stable for any $\Delta t$ but each step needs sparse solve; precompute Cholesky factor once if topology fixed.
+  \item \emph{QEM optimal $\bar v$}: always check matrix invertibility; degenerate $\Rightarrow$ midpoint fallback.
+  \item \emph{Hole detection on non-manifold} edges: an edge with $\ge 3$ incident faces is non-manifold, not a hole; pre-clean.
+  \item \emph{Marching Cubes ambiguity}: face/internal ambiguity $\Rightarrow$ cracks; use asymptotic decider or Marching Tetrahedra.
+  \item \emph{Taubin}: requires $|\mu|>\lambda$; if $\mu=-\lambda$ pass-band $k_{pb}=0$ no smoothing.
+  \item \emph{Laplacian} on irregular mesh = uniform $\ne$ cotangent; uniform behaves like graph diffusion (curvature flow only on regular meshes).
+  \item \emph{Hausdorff} is asymmetric in general; use 2-sided $\max$.
+  \item \emph{Poisson recon} blurs sharp features (low-pass); try \emph{screened} variant or feature-aware methods.
+  \item \emph{Boundary loops $\ne$ holes 1-1} when surface has multiple holes sharing topology (e.g., torus with bites).
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{2.8 Mẹo nhớ / Bẫy thường gặp}
+\begin{itemize}[leftmargin=*,nosep]
+  \item Trọng số \emph{cotangent} có thể âm trên tam giác tù $\Rightarrow$ ma trận mất M-property, có thể flip. Khắc phục bằng intrinsic Delaunay.
+  \item \emph{Implicit Euler} ổn định mọi $\Delta t$ nhưng mỗi bước phải solve sparse; precompute Cholesky nếu topology cố định.
+  \item \emph{QEM} $\bar v$ tối ưu: luôn kiểm tra suy biến; nếu suy biến dùng trung điểm.
+  \item Phát hiện lỗ trên mesh không manifold: cạnh có $\ge 3$ mặt là non-manifold, không phải lỗ; cần dọn trước.
+  \item \emph{Marching Cubes ambiguity}: face/internal $\Rightarrow$ lỗ rạn; dùng asymptotic decider hoặc MT.
+  \item \emph{Taubin} cần $|\mu|>\lambda$; nếu $\mu=-\lambda$ thì pass-band $k_{pb}=0$, không smooth.
+  \item Laplacian đều $\ne$ cotangent trên mesh không đều; uniform = graph diffusion.
+  \item \emph{Hausdorff} bất đối xứng; nên dùng max hai chiều.
+  \item \emph{Poisson recon} làm mờ chi tiết sắc; dùng \emph{screened} hoặc feature-aware.
+  \item Boundary loop $\ne$ lỗ 1-1 khi topology phức (ví dụ torus bị cắn).
+\end{itemize}
+
+\end{paracol}

@@ -1,0 +1,719 @@
+% ============================================================
+% Section 01 — VR / AR  (Bilingual EN | VI)
+% IT516 Advanced Computer Graphics — Final Exam Cheatsheet
+% ============================================================
+\begin{paracol}{2}
+
+% ---------- 1.1 Definitions ----------
+\section*{1. Virtual Reality \& Augmented Reality}
+\subsection*{1.1 Definitions (VR / AR / MR / XR)}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{VR (Virtual Reality)}: \emph{fully synthetic} immersive 3D environment that \textbf{replaces} the real world. User wears HMD; senses (sight, sound, sometimes touch) are isolated from reality. Goal = \emph{presence} (feeling of "being there").
+  \item \textbf{AR (Augmented Reality)}: virtual objects \textbf{overlaid} onto the real world in real time and registered in 3D. Real world remains dominant; CG content adds info. Milgram's 3 criteria: (1) combines real+virtual, (2) interactive in real time, (3) registered in 3D.
+  \item \textbf{MR (Mixed Reality)}: virtual and real objects \emph{co-exist and interact} (e.g., a virtual ball bounces on a real table). HoloLens-class devices.
+  \item \textbf{XR (Extended Reality)}: umbrella term covering VR + AR + MR.
+  \item \textbf{Milgram Reality–Virtuality Continuum}: Real $\to$ AR $\to$ AV (Augmented Virtuality) $\to$ VR.
+  \item Key distinguishing axes: \emph{Immersion} (low $\to$ high), \emph{Registration} (none $\to$ 3D-locked), \emph{Display} (screen / video see-through / optical see-through), \emph{World model} (real / hybrid / synthetic).
+\end{itemize}
+
+\switchcolumn
+
+\section*{1. Thực tế ảo \& Thực tế tăng cường}
+\subsection*{1.1 Định nghĩa (VR / AR / MR / XR)}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{VR (Thực tế ảo)}: môi trường 3D \emph{hoàn toàn nhân tạo}, \textbf{thay thế} thế giới thật. Người dùng đeo HMD; các giác quan bị cô lập khỏi thực tế. Mục tiêu = \emph{presence} (cảm giác "đang ở đó").
+  \item \textbf{AR (Thực tế tăng cường)}: vật thể ảo được \textbf{chồng lên} thế giới thật theo thời gian thực và được \emph{đăng ký} (registered) trong không gian 3D. Thế giới thật vẫn là chính. 3 tiêu chí Milgram: (1) kết hợp thật+ảo, (2) tương tác thời gian thực, (3) đăng ký 3D.
+  \item \textbf{MR (Thực tế hỗn hợp)}: vật ảo và vật thật \emph{cùng tồn tại và tương tác} (ví dụ: bóng ảo nảy trên bàn thật). Thiết bị tiêu biểu: HoloLens.
+  \item \textbf{XR}: thuật ngữ ô bao trùm VR + AR + MR.
+  \item \textbf{Milgram continuum}: Thật $\to$ AR $\to$ AV $\to$ VR.
+  \item Trục phân biệt: \emph{độ đắm chìm}, \emph{độ đăng ký}, \emph{loại hiển thị} (screen / video see-through / optical see-through), \emph{mô hình thế giới}.
+\end{itemize}
+
+\switchcolumn*
+
+% ---------- 1.2 History ----------
+\subsection*{1.2 History \& Milestones}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{1838} Wheatstone — stereoscope (binocular depth).
+  \item \textbf{1962} Morton Heilig — \emph{Sensorama}: multi-sensory arcade (sight, sound, smell, vibration).
+  \item \textbf{1968} Ivan Sutherland — \emph{Sword of Damocles}: first HMD with head tracking; ceiling-mounted.
+  \item \textbf{1980s} Jaron Lanier coins "Virtual Reality"; VPL Research sells DataGlove + EyePhone.
+  \item \textbf{1990} Tom Caudell coins "Augmented Reality" (Boeing).
+  \item \textbf{1992} CAVE (UIC) — projection-based VR room.
+  \item \textbf{1997} Feiner et al. — Touring Machine (mobile AR).
+  \item \textbf{1999} \emph{ARToolKit} (Kato \& Billinghurst) — fiducial-marker AR library.
+  \item \textbf{2010s} consumer wave: Oculus Rift DK1 (2013), Google Glass (2013), HTC Vive (2016), HoloLens (2016), PSVR (2016).
+  \item \textbf{2017+} ARKit (Apple), ARCore (Google), Magic Leap One (2018), Quest 2 (2020), Quest Pro/3 (2022/23), Vision Pro (2024).
+  \item \textbf{2019} OpenXR 1.0 standard ratified by Khronos.
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{1.2 Lịch sử \& Cột mốc}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{1838} Wheatstone — kính lập thể (stereoscope).
+  \item \textbf{1962} Morton Heilig — \emph{Sensorama}: máy đa giác quan (hình, tiếng, mùi, rung).
+  \item \textbf{1968} Ivan Sutherland — \emph{Sword of Damocles}: HMD đầu tiên có tracking đầu, treo trên trần.
+  \item \textbf{1980} Jaron Lanier đặt ra từ "Virtual Reality"; VPL Research bán DataGlove, EyePhone.
+  \item \textbf{1990} Tom Caudell đặt từ "Augmented Reality" tại Boeing.
+  \item \textbf{1992} CAVE (UIC) — phòng VR dùng máy chiếu.
+  \item \textbf{1997} Feiner — Touring Machine, AR di động đầu tiên.
+  \item \textbf{1999} \emph{ARToolKit} — thư viện AR dùng marker.
+  \item \textbf{2010s} làn sóng tiêu dùng: Oculus Rift DK1, Google Glass, HTC Vive, HoloLens, PSVR.
+  \item \textbf{2017+} ARKit, ARCore, Magic Leap, Quest 2/3, Vision Pro.
+  \item \textbf{2019} chuẩn OpenXR 1.0 (Khronos).
+\end{itemize}
+
+\switchcolumn*
+
+% ---------- 1.3 VR Hardware ----------
+\subsection*{1.3 VR Components / Hardware}
+\textbf{HMD (Head-Mounted Display)}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Tethered}: HTC Vive, Valve Index, PSVR (PC/console).
+  \item \emph{Standalone}: Meta Quest 2/3/Pro (mobile SoC, no PC).
+  \item \emph{High-end}: Apple Vision Pro, Varjo XR-3 (eye tracking, micro-OLED, very high PPD).
+  \item Specs to remember: \textbf{FOV} 90$^\circ$–110$^\circ$ typical, 200$^\circ$+ Pimax; \textbf{refresh} 72/90/120/144 Hz; \textbf{resolution} per-eye 2K–4K; \textbf{IPD} adjustable 58–72 mm.
+\end{itemize}
+\textbf{Tracking}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{DoF}: 3DoF = rotation only (yaw, pitch, roll) — phone VR; 6DoF = rotation + translation (x,y,z) — proper VR.
+  \item \textbf{Outside-in}: external sensors track HMD (Vive Lighthouse base stations sweep IR lasers; Oculus Constellation IR LEDs + cameras). Pros: precise; Cons: setup, occlusion.
+  \item \textbf{Inside-out}: cameras on HMD track environment via SLAM (Quest, WMR). Pros: portable; Cons: needs lighting/features.
+  \item \textbf{Lighthouse}: 2 base stations emit horizontal+vertical IR sweeps; photodiodes on HMD/controller measure timing $\Rightarrow$ pose.
+\end{itemize}
+\textbf{Input}: 6DoF controllers (Touch, Index knuckles), haptic gloves (HaptX, Manus), full-body suits (Teslasuit), \textbf{omni-treadmills} (Virtuix, KAT Walk), motion platforms / chairs.\\
+\textbf{Audio}: \emph{spatial / binaural} via HRTF (Head-Related Transfer Function); HMD has built-in speakers or 3.5mm jack; engines: Steam Audio, Oculus Spatializer, Resonance Audio.
+
+\switchcolumn
+
+\subsection*{1.3 Phần cứng VR}
+\textbf{HMD (Kính thực tế ảo)}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Tethered}: HTC Vive, Valve Index, PSVR (cần PC/console).
+  \item \emph{Standalone}: Meta Quest 2/3/Pro (chip di động, không cần PC).
+  \item \emph{Cao cấp}: Vision Pro, Varjo XR-3 (eye-tracking, micro-OLED).
+  \item Thông số quan trọng: \textbf{FOV} 90–110$^\circ$; \textbf{refresh} 72/90/120/144 Hz; \textbf{độ phân giải} mỗi mắt 2K–4K; \textbf{IPD} chỉnh được 58–72 mm.
+\end{itemize}
+\textbf{Tracking}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{DoF}: 3DoF chỉ xoay (yaw, pitch, roll); 6DoF có thêm tịnh tiến — chuẩn VR.
+  \item \textbf{Outside-in}: cảm biến ngoài theo dõi HMD (Vive Lighthouse quét laser IR; Oculus Constellation dùng LED IR + camera). Chính xác cao nhưng phải lắp đặt.
+  \item \textbf{Inside-out}: camera gắn trên HMD chạy SLAM (Quest, WMR). Linh hoạt nhưng cần ánh sáng + đặc trưng môi trường.
+  \item \textbf{Lighthouse}: 2 trạm phát quét IR ngang + dọc; cảm biến quang trên HMD đo thời gian $\Rightarrow$ tính pose.
+\end{itemize}
+\textbf{Input}: tay cầm 6DoF (Touch, Index), găng haptic (HaptX, Manus), bộ đồ toàn thân (Teslasuit), \textbf{máy chạy đa hướng} (Virtuix), bệ chuyển động/ghế.\\
+\textbf{Âm thanh}: \emph{không gian / binaural} qua HRTF; SDK: Steam Audio, Oculus Spatializer, Resonance Audio.
+
+\switchcolumn*
+
+% ---------- 1.4 AR Hardware ----------
+\subsection*{1.4 AR Components / Hardware}
+\textbf{Display types}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Optical see-through (OST)}: user sees the real world directly through transparent optics (waveguide, half-mirror); CG is added via tiny projector. Devices: \emph{Microsoft HoloLens 1/2}, \emph{Magic Leap 1/2}, \emph{Google Glass}. Pros: zero camera latency for real world; Cons: limited FOV, low contrast in bright light.
+  \item \textbf{Video see-through (VST)}: cameras capture the world $\to$ composited with CG $\to$ shown on opaque screen. Devices: phone/tablet AR, Quest 3 passthrough, Vision Pro. Pros: better occlusion, full opacity; Cons: latency, low real-world fidelity.
+  \item \textbf{Projection / Spatial AR}: project light onto real surfaces (museum installations, projection mapping).
+  \item \textbf{Handheld}: smartphones / tablets — most common AR platform.
+\end{itemize}
+\textbf{Sensors}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item RGB camera (feature tracking), IMU (gyro+accel for orientation), depth: \textbf{ToF}, \textbf{structured light}, \textbf{LiDAR} (iPhone Pro / iPad Pro), stereo cameras.
+  \item GPS + compass (outdoor AR like Pokemon GO).
+\end{itemize}
+\textbf{Tracking modes}: \textbf{marker-based} (fiducial markers, QR-like), \textbf{markerless} (natural features), \textbf{model-based} (CAD model), \textbf{SLAM} (build map on the fly).
+
+\switchcolumn
+
+\subsection*{1.4 Phần cứng AR}
+\textbf{Loại hiển thị}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Optical see-through (OST)}: nhìn xuyên qua quang học trong suốt (waveguide, gương bán phản); CG được chiếu thêm. Thiết bị: HoloLens 1/2, Magic Leap, Google Glass. Ưu: không trễ ảnh thật; Nhược: FOV nhỏ, tương phản kém ngoài sáng.
+  \item \textbf{Video see-through (VST)}: camera chụp $\to$ ghép với CG $\to$ hiển thị trên màn hình kín. Thiết bị: AR điện thoại, passthrough Quest 3, Vision Pro. Ưu: occlusion tốt; Nhược: trễ, độ trung thực thấp hơn.
+  \item \textbf{AR chiếu / không gian}: chiếu hình lên bề mặt thật (bảo tàng, projection mapping).
+  \item \textbf{Cầm tay}: smartphone, tablet — phổ biến nhất.
+\end{itemize}
+\textbf{Cảm biến}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Camera RGB, IMU (gyro+accel), độ sâu: ToF, ánh sáng cấu trúc, \textbf{LiDAR} (iPhone Pro/iPad Pro), camera stereo.
+  \item GPS + la bàn (AR ngoài trời, Pokemon GO).
+\end{itemize}
+\textbf{Chế độ tracking}: dùng marker (fiducial), không marker (đặc trưng tự nhiên), model-based (mô hình CAD), \textbf{SLAM} (tự dựng bản đồ).
+
+\switchcolumn*
+
+% ---------- 1.5 VR pipeline ----------
+\subsection*{1.5 How VR Works (Pipeline)}
+\textbf{Per-frame pipeline}:
+\begin{enumerate}[leftmargin=*,nosep]
+  \item \textbf{Sensor sample}: HMD pose (IMU + optical) and controller poses.
+  \item \textbf{Prediction}: extrapolate pose to expected display time (reduce latency).
+  \item \textbf{View matrix update}: build $V_L, V_R$ for left/right eye using IPD offset and head pose.
+  \item \textbf{Stereoscopic rendering}: render scene twice (one viewport per eye) into a stereo render target. Off-axis (asymmetric) frustum for each eye.
+  \item \textbf{Lens distortion correction}: apply \emph{barrel pre-distortion} so that the lens's pincushion distortion cancels out; also chromatic aberration correction per RGB channel.
+  \item \textbf{Reprojection / Timewarp}: just before scanout, warp the rendered image using latest head pose (Asynchronous Timewarp = ATW; Asynchronous Spacewarp = ASW interpolates frames).
+  \item \textbf{Display scan-out} at 90/120 Hz; spatial audio mixed via HRTF.
+\end{enumerate}
+\textbf{Critical numbers}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Refresh $\geq$ 90 Hz to feel smooth; 120 Hz preferred.
+  \item \textbf{Motion-to-photon latency} $<$ 20 ms (ideal $<$ 11 ms) to avoid sickness.
+  \item Stereo projection: $\mathbf{P}_{\text{eye}} = \mathbf{P}_{\text{proj}} \cdot \mathbf{T}(\pm \tfrac{IPD}{2}) \cdot \mathbf{V}_{\text{head}}$.
+  \item \textbf{Foveated rendering}: render high-res only where the eye looks (eye-tracker), low-res in periphery $\Rightarrow$ 30–70\% GPU saving (Quest Pro, PSVR2).
+\end{itemize}
+
+\begin{center}\scriptsize
+\begin{tikzpicture}[node distance=3mm and 3mm, every node/.style={font=\tiny,draw,rounded corners,inner sep=2pt}]
+  \node (a) {IMU+Optical};
+  \node (b) [right=of a] {Pose pred.};
+  \node (c) [right=of b] {V$_L$/V$_R$};
+  \node (d) [below=of c] {Render L};
+  \node (e) [left=of d] {Render R};
+  \node (f) [below=of e,xshift=10mm] {Distort+CA};
+  \node (g) [below=of f] {Timewarp};
+  \node (h) [below=of g] {Display 90Hz};
+  \draw[->] (a)--(b); \draw[->] (b)--(c);
+  \draw[->] (c)--(d); \draw[->] (c)--(e);
+  \draw[->] (d.south)--(f); \draw[->] (e.south)--(f);
+  \draw[->] (f)--(g); \draw[->] (g)--(h);
+\end{tikzpicture}
+\end{center}
+
+\switchcolumn
+
+\subsection*{1.5 Cách VR hoạt động (Pipeline)}
+\textbf{Pipeline mỗi khung hình}:
+\begin{enumerate}[leftmargin=*,nosep]
+  \item \textbf{Lấy mẫu cảm biến}: pose của HMD (IMU + quang học) và controller.
+  \item \textbf{Dự đoán}: ngoại suy pose tới thời điểm hiển thị $\Rightarrow$ giảm latency.
+  \item \textbf{Cập nhật ma trận view}: dựng $V_L, V_R$ cho mắt trái/phải dùng độ lệch IPD và pose đầu.
+  \item \textbf{Render lập thể}: render cảnh 2 lần (mỗi mắt 1 viewport) vào stereo target. Mỗi mắt dùng frustum lệch trục (asymmetric).
+  \item \textbf{Hiệu chỉnh méo ống kính}: \emph{barrel pre-distortion} ngược chiều méo pincushion của lens; cộng thêm hiệu chỉnh sắc sai cho từng kênh R,G,B.
+  \item \textbf{Reprojection / Timewarp}: ngay trước khi quét hình, warp ảnh với pose đầu mới nhất (ATW); ASW nội suy thêm khung.
+  \item \textbf{Quét ra màn hình} 90/120 Hz; trộn âm thanh không gian qua HRTF.
+\end{enumerate}
+\textbf{Con số quan trọng}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Refresh $\geq$ 90 Hz mới mượt; 120 Hz tốt hơn.
+  \item \textbf{Motion-to-photon latency} $<$ 20 ms (lý tưởng $<$ 11 ms) để không gây say.
+  \item Phép chiếu lập thể: $\mathbf{P}_{\text{mắt}} = \mathbf{P}_{\text{proj}} \cdot \mathbf{T}(\pm \tfrac{IPD}{2}) \cdot \mathbf{V}_{\text{đầu}}$.
+  \item \textbf{Foveated rendering}: chỉ render độ phân giải cao nơi mắt nhìn (cần eye-tracking), giảm 30–70\% tải GPU.
+\end{itemize}
+
+\switchcolumn*
+
+% ---------- 1.6 AR pipeline ----------
+\subsection*{1.6 How AR Works (Pipeline)}
+\textbf{Generic AR pipeline}:
+\begin{enumerate}[leftmargin=*,nosep]
+  \item \textbf{Capture}: camera frame + IMU sample.
+  \item \textbf{Pre-process}: undistort, grayscale, downsample.
+  \item \textbf{Feature detection}: corners (FAST/Harris), descriptors (ORB, SIFT, SURF, BRIEF).
+  \item \textbf{Tracking / pose estimation}:
+    \begin{itemize}[nosep]
+      \item Marker-based: detect square/QR-like marker, find 4 corners, compute homography $\mathbf{H}$, decompose to $[R|t]$ (PnP).
+      \item Markerless: match features to map, run \textbf{PnP} (Perspective-n-Point) for camera pose, refine with RANSAC.
+    \end{itemize}
+  \item \textbf{SLAM update}: insert keyframe, triangulate new map points, run \textbf{bundle adjustment} (joint optim of poses + points).
+  \item \textbf{Scene understanding}: plane detection (RANSAC on point cloud), depth from LiDAR/ToF, semantic segmentation, light estimation.
+  \item \textbf{Rendering}: project virtual model with same intrinsics $K$ and pose $[R|t]$; handle \textbf{occlusion} via depth (real depth from sensor vs virtual z-buffer); composite over camera image (VST) or display via see-through.
+\end{enumerate}
+\textbf{Math kernels}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Homography $\mathbf{x'} = \mathbf{H}\mathbf{x}$ (planar), 8 DoF.
+  \item Camera projection $\mathbf{x} = K[R|t]\mathbf{X}$.
+  \item PnP: $\geq 3$ 3D-2D correspondences $\Rightarrow$ pose.
+\end{itemize}
+\textbf{SLAM variants}: ORB-SLAM (feature-based), LSD-SLAM (direct), DSO, PTAM (parallel tracking + mapping), VINS-Mono (visual-inertial), ARKit/ARCore use \textbf{VIO} (Visual-Inertial Odometry).
+
+\begin{center}\scriptsize
+\begin{tikzpicture}[node distance=2.5mm and 3mm, every node/.style={font=\tiny,draw,rounded corners,inner sep=2pt}]
+  \node (a) {Camera+IMU};
+  \node (b) [right=of a] {Features};
+  \node (c) [right=of b] {Match/Track};
+  \node (d) [below=of c] {PnP pose};
+  \node (e) [left=of d] {SLAM map};
+  \node (f) [left=of e] {Plane det.};
+  \node (g) [below=of f] {Render CG};
+  \node (h) [right=of g] {Composite};
+  \node (i) [right=of h] {Display};
+  \draw[->] (a)--(b); \draw[->] (b)--(c); \draw[->] (c)--(d);
+  \draw[->] (d)--(e); \draw[->] (e)--(f); \draw[->] (f)--(g);
+  \draw[->] (g)--(h); \draw[->] (h)--(i);
+\end{tikzpicture}
+\end{center}
+
+\switchcolumn
+
+\subsection*{1.6 Cách AR hoạt động (Pipeline)}
+\textbf{Pipeline AR tổng quát}:
+\begin{enumerate}[leftmargin=*,nosep]
+  \item \textbf{Chụp}: khung hình từ camera + mẫu IMU.
+  \item \textbf{Tiền xử lý}: gỡ méo, chuyển xám, giảm kích thước.
+  \item \textbf{Phát hiện đặc trưng}: góc (FAST/Harris), descriptor (ORB, SIFT, SURF, BRIEF).
+  \item \textbf{Tracking / ước lượng pose}:
+    \begin{itemize}[nosep]
+      \item Marker-based: tìm marker vuông/QR, lấy 4 góc, tính homography $\mathbf{H}$, phân rã thành $[R|t]$.
+      \item Markerless: khớp đặc trưng với bản đồ, chạy \textbf{PnP} để tìm pose camera, lọc bằng RANSAC.
+    \end{itemize}
+  \item \textbf{Cập nhật SLAM}: thêm keyframe, tam giác hóa điểm bản đồ mới, chạy \textbf{bundle adjustment}.
+  \item \textbf{Hiểu cảnh}: phát hiện mặt phẳng (RANSAC trên point cloud), độ sâu từ LiDAR/ToF, segment, ước lượng ánh sáng.
+  \item \textbf{Render}: chiếu mô hình ảo với cùng nội tham số $K$ và pose $[R|t]$; xử lý \textbf{occlusion} bằng độ sâu thực vs z-buffer; ghép lên ảnh camera (VST) hoặc qua optical see-through.
+\end{enumerate}
+\textbf{Công thức toán}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Homography $\mathbf{x'} = \mathbf{H}\mathbf{x}$ (mặt phẳng), 8 bậc tự do.
+  \item Phép chiếu camera $\mathbf{x} = K[R|t]\mathbf{X}$.
+  \item PnP: $\geq 3$ tương ứng 3D-2D $\Rightarrow$ pose.
+\end{itemize}
+\textbf{Biến thể SLAM}: ORB-SLAM, LSD-SLAM, DSO, PTAM, VINS-Mono; ARKit/ARCore dùng \textbf{VIO} (kết hợp camera + IMU).
+
+\switchcolumn*
+
+% ---------- 1.7 Tracking ----------
+\subsection*{1.7 Tracking Techniques}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Optical}: cameras + features/markers/LEDs. High accuracy, occlusion-prone.
+  \item \textbf{Inertial (IMU)}: gyroscope (angular vel.), accelerometer (linear accel), magnetometer. High frequency (1 kHz), drifts over time.
+  \item \textbf{Magnetic}: tracks coil in EM field (Polhemus). Immune to occlusion, distorted by metal.
+  \item \textbf{Acoustic}: ultrasonic time-of-flight. Cheap, low precision.
+  \item \textbf{Mechanical}: jointed arm encoders (very precise, restricted volume).
+  \item \textbf{Hybrid / Sensor fusion}: complementary filter or \textbf{Extended Kalman Filter (EKF)} fusing IMU (fast, drifts) + vision (slow, absolute) $\Rightarrow$ used in all modern HMDs.
+\end{itemize}
+\textbf{CV building blocks}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Feature detectors: Harris, FAST, DoG. Descriptors: SIFT (scale-invariant), SURF, ORB (binary, fast), BRIEF, AKAZE.
+  \item Matching: brute-force / FLANN; Lowe's ratio test; RANSAC for outlier rejection.
+  \item Homography (planar) vs Fundamental/Essential matrix (general epipolar geometry).
+  \item Pose: solvePnP (OpenCV), Levenberg–Marquardt refinement.
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{1.7 Kỹ thuật tracking}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Quang học}: camera + đặc trưng/marker/LED. Chính xác cao, dễ bị che.
+  \item \textbf{Quán tính (IMU)}: con quay (vận tốc góc), gia tốc kế, từ kế. Tần số cao (1 kHz) nhưng trôi theo thời gian.
+  \item \textbf{Từ trường}: theo dõi cuộn dây trong từ trường (Polhemus). Không bị che nhưng méo bởi kim loại.
+  \item \textbf{Âm thanh}: siêu âm đo thời gian truyền. Rẻ, kém chính xác.
+  \item \textbf{Cơ học}: cánh tay khớp có encoder (cực chính xác, vùng nhỏ).
+  \item \textbf{Lai / Sensor fusion}: complementary filter hoặc \textbf{Extended Kalman Filter (EKF)} kết hợp IMU + vision $\Rightarrow$ tất cả HMD hiện đại đều dùng.
+\end{itemize}
+\textbf{Thị giác máy tính cơ bản}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Phát hiện đặc trưng: Harris, FAST, DoG. Descriptor: SIFT (bất biến tỉ lệ), SURF, ORB (nhị phân, nhanh), BRIEF, AKAZE.
+  \item Khớp: brute-force / FLANN; kiểm tra tỉ lệ Lowe; RANSAC loại điểm sai.
+  \item Homography (mặt phẳng) vs ma trận Cơ bản/Bản chất (epipolar tổng quát).
+  \item Pose: solvePnP (OpenCV), tinh chỉnh Levenberg–Marquardt.
+\end{itemize}
+
+\switchcolumn*
+
+% ---------- 1.8 Display ----------
+\subsection*{1.8 Display Technologies}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{LCD}: cheap, full RGB sub-pixels, slower switch, backlight bleeding (Quest 2).
+  \item \textbf{OLED}: deep blacks, fast response, but PenTile sub-pixel (loss of effective res), burn-in (PSVR1).
+  \item \textbf{Micro-OLED (OLEDoS)}: silicon-backplane OLED, very high PPI (3000+ ppi), used in Vision Pro, Bigscreen Beyond.
+  \item \textbf{LCoS / DLP}: used in projector-based AR.
+  \item \textbf{Waveguides}: thin glass plates with diffraction gratings; light from micro-projector totally-internally-reflects to eye (HoloLens 2, Magic Leap).
+  \item \textbf{Birdbath optics}: half-mirror combiner (Nreal/XReal Air).
+  \item \textbf{Light-field displays}: multiple focal planes $\to$ correct vergence-accommodation (VAC) conflict (Magic Leap 1 had 2 planes).
+  \item \textbf{Pancake lenses}: folded optics $\Rightarrow$ thinner HMD (Quest Pro/3, Vision Pro) at cost of light efficiency.
+\end{itemize}
+\textbf{Key metrics}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{FOV} (field of view): horizontal $\times$ vertical degrees. Human $\approx$ 200$^\circ$ H.
+  \item \textbf{IPD} (inter-pupillary distance) 54–74 mm; mismatch $\Rightarrow$ eye strain.
+  \item \textbf{PPD} (pixels per degree): retina-quality $\approx$ 60 PPD; Quest 2 $\approx$ 20, Vision Pro $\approx$ 34.
+  \item \textbf{Screen-door effect (SDE)}: visible gaps between pixels.
+  \item \textbf{God rays / glare}: stray light around bright objects (Fresnel lenses).
+  \item \textbf{VAC}: eye \emph{vergence} (where eyes converge) vs \emph{accommodation} (focus depth) — fixed focal plane at $\sim$2 m causes conflict.
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{1.8 Công nghệ hiển thị}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{LCD}: rẻ, sub-pixel RGB đầy đủ, chuyển chậm hơn, hở đèn nền (Quest 2).
+  \item \textbf{OLED}: đen sâu, đáp ứng nhanh, nhưng PenTile làm giảm độ phân giải hiệu dụng, dễ burn-in (PSVR1).
+  \item \textbf{Micro-OLED (OLEDoS)}: OLED trên đế silicon, PPI rất cao (3000+), dùng trong Vision Pro, Bigscreen Beyond.
+  \item \textbf{LCoS / DLP}: dùng trong AR chiếu.
+  \item \textbf{Waveguide}: tấm kính mỏng có grating; ánh sáng từ projector mini phản xạ toàn phần đến mắt (HoloLens 2, Magic Leap).
+  \item \textbf{Birdbath}: gương bán phản (Nreal/XReal Air).
+  \item \textbf{Light-field}: nhiều mặt tiêu cự $\to$ sửa xung đột vergence-accommodation.
+  \item \textbf{Pancake lens}: thấu kính gập $\Rightarrow$ HMD mỏng hơn (Quest Pro/3, Vision Pro), đánh đổi hiệu suất sáng.
+\end{itemize}
+\textbf{Chỉ số quan trọng}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{FOV}: độ ngang $\times$ dọc. Người $\approx$ 200$^\circ$ ngang.
+  \item \textbf{IPD}: 54–74 mm; sai lệch gây mỏi mắt.
+  \item \textbf{PPD}: chuẩn võng mạc $\approx$ 60; Quest 2 $\approx$ 20, Vision Pro $\approx$ 34.
+  \item \textbf{Screen-door effect}: thấy khe giữa các pixel.
+  \item \textbf{God rays}: vệt sáng quanh vật sáng (Fresnel).
+  \item \textbf{VAC}: xung đột giữa hội tụ mắt và độ nét — gây mỏi sau lâu.
+\end{itemize}
+
+\switchcolumn*
+
+% ---------- 1.9 Software / SDK ----------
+\subsection*{1.9 Software / SDKs / Tools}
+\textbf{Game engines (course uses Unity)}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Unity 3D}: \emph{XR Interaction Toolkit}, \emph{XR Plug-in Management}, OpenXR plug-in, AR Foundation (cross-platform AR over ARKit/ARCore).
+  \item \textbf{Unreal Engine}: built-in OpenXR + ARKit/ARCore plug-ins; Niagara/MetaHuman.
+  \item Godot 4 also has OpenXR.
+\end{itemize}
+\textbf{AR SDKs}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Apple ARKit}: iOS/iPadOS; world tracking, plane detection, face/body tracking, RealityKit, LiDAR scene reconstruction.
+  \item \textbf{Google ARCore}: Android; motion tracking, environmental understanding, light estimation, Geospatial API.
+  \item \textbf{Vuforia}: Image targets, Model Targets, VuMarks; cross-platform, runs in Unity.
+  \item \textbf{ARToolKit / ARToolKitX}: open-source fiducial-marker AR (oldest).
+  \item \textbf{8th Wall, Zappar}: WebAR.
+  \item \textbf{Microsoft MRTK}: Mixed Reality Toolkit for HoloLens/WMR.
+  \item \textbf{Niantic Lightship}: AR cloud, persistent multiplayer.
+\end{itemize}
+\textbf{VR / Standards}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{OpenXR} (Khronos, 2019): cross-vendor API; replaces OpenVR/Oculus SDK lock-in.
+  \item \textbf{OpenVR / SteamVR}: Valve's runtime.
+  \item \textbf{Oculus Integration / Meta XR SDK}: Quest specific features.
+  \item \textbf{WebXR Device API}: browser-based XR (Three.js, A-Frame, Babylon.js).
+\end{itemize}
+\textbf{3D content}: Blender, Maya, 3ds Max, ZBrush (sculpt), Substance (texture), Reality Capture / Meshroom (photogrammetry), Quill / Gravity Sketch (in-VR modeling).
+
+\switchcolumn
+
+\subsection*{1.9 Phần mềm / SDK / Công cụ}
+\textbf{Game engine (môn học dùng Unity)}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Unity 3D}: \emph{XR Interaction Toolkit}, \emph{XR Plug-in Management}, OpenXR plug-in, AR Foundation (đa nền tảng qua ARKit/ARCore).
+  \item \textbf{Unreal Engine}: tích hợp OpenXR + ARKit/ARCore; Niagara, MetaHuman.
+  \item Godot 4 cũng có OpenXR.
+\end{itemize}
+\textbf{SDK AR}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Apple ARKit}: iOS/iPadOS; world tracking, plane, mặt/cơ thể, RealityKit, dựng cảnh LiDAR.
+  \item \textbf{Google ARCore}: Android; motion tracking, hiểu môi trường, ước lượng sáng, Geospatial API.
+  \item \textbf{Vuforia}: Image Target, Model Target, VuMark; chạy trong Unity.
+  \item \textbf{ARToolKit / ARToolKitX}: AR marker mã nguồn mở, cổ nhất.
+  \item \textbf{8th Wall, Zappar}: WebAR.
+  \item \textbf{Microsoft MRTK}: cho HoloLens/WMR.
+  \item \textbf{Niantic Lightship}: AR cloud, multiplayer bền vững.
+\end{itemize}
+\textbf{VR / Chuẩn}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{OpenXR} (Khronos, 2019): API đa nhà sản xuất.
+  \item \textbf{OpenVR / SteamVR}: runtime của Valve.
+  \item \textbf{Oculus / Meta XR SDK}: tính năng riêng Quest.
+  \item \textbf{WebXR}: XR trên trình duyệt (Three.js, A-Frame, Babylon.js).
+\end{itemize}
+\textbf{Nội dung 3D}: Blender, Maya, 3ds Max, ZBrush, Substance, Reality Capture / Meshroom (photogrammetry), Quill / Gravity Sketch (vẽ trong VR).
+
+\switchcolumn*
+
+% ---------- 1.10 Unity steps ----------
+\subsection*{1.10 Implementation in Unity (VR + AR)}
+\textbf{VR project setup (XR Interaction Toolkit)}:
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Create 3D project (URP recommended). \emph{Edit $\to$ Project Settings $\to$ XR Plug-in Management} $\to$ install, tick \textbf{OpenXR} (PC) or Oculus (Android Quest).
+  \item Add Interaction Profiles in OpenXR settings (Oculus Touch, Valve Index, etc.).
+  \item Install \emph{XR Interaction Toolkit} via Package Manager + Samples (Starter Assets).
+  \item Replace Main Camera with \textbf{XR Origin (XR Rig)} prefab (camera offset + camera + LeftHand/RightHand controllers).
+  \item Add \emph{XR Interaction Manager} to scene.
+  \item Add interactables: \texttt{XRGrabInteractable} on objects, \emph{XR Ray Interactor} or \emph{Direct Interactor} on hands.
+  \item \textbf{Locomotion}: add \emph{Locomotion System}, \emph{Teleportation Provider}, \emph{Continuous Move/Turn Provider}; teleport areas/anchors on floor.
+  \item Build settings: Android $\to$ enable IL2CPP, ARM64, Oculus loader; deploy via adb.
+\end{enumerate}
+\textbf{AR project setup (AR Foundation)}:
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Install AR Foundation + ARKit XR Plugin (iOS) and/or ARCore XR Plugin (Android).
+  \item Scene: \textbf{AR Session} + \textbf{XR Origin (AR)} (with AR Camera, AR Camera Manager, AR Camera Background).
+  \item Add \emph{AR Plane Manager} for plane detection, \emph{AR Raycast Manager} for hit-testing taps.
+  \item Place objects: cast ray from screen tap $\to$ \texttt{ARRaycastHit} $\to$ instantiate prefab as child of trackable, optionally add \emph{AR Anchor}.
+  \item Image tracking: \emph{AR Tracked Image Manager} + Reference Image Library.
+  \item Face tracking (front cam): \emph{AR Face Manager}.
+  \item Build: iOS Xcode (camera usage description in Info.plist) / Android (min API 24, ARCore supported).
+\end{enumerate}
+\textbf{Tip}: use \emph{XR Device Simulator} package to test without headset.
+
+\switchcolumn
+
+\subsection*{1.10 Triển khai trong Unity (VR + AR)}
+\textbf{Cài VR (XR Interaction Toolkit)}:
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Tạo project 3D (nên URP). \emph{Edit $\to$ Project Settings $\to$ XR Plug-in Management} $\to$ cài, tick \textbf{OpenXR} (PC) hoặc Oculus (Quest).
+  \item Bật Interaction Profile trong OpenXR (Oculus Touch, Valve Index...).
+  \item Cài \emph{XR Interaction Toolkit} qua Package Manager + Samples.
+  \item Thay Main Camera bằng prefab \textbf{XR Origin (XR Rig)} (camera offset + camera + 2 controller).
+  \item Thêm \emph{XR Interaction Manager} vào scene.
+  \item Thêm interactable: \texttt{XRGrabInteractable} cho vật, \emph{XR Ray Interactor} hoặc \emph{Direct Interactor} cho tay.
+  \item \textbf{Di chuyển}: thêm \emph{Locomotion System}, \emph{Teleportation Provider}, \emph{Continuous Move/Turn}; đặt teleport area trên sàn.
+  \item Build: Android, IL2CPP, ARM64, loader Oculus, deploy bằng adb.
+\end{enumerate}
+\textbf{Cài AR (AR Foundation)}:
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Cài AR Foundation + ARKit (iOS) hoặc ARCore (Android).
+  \item Scene: \textbf{AR Session} + \textbf{XR Origin (AR)} (gồm AR Camera, Camera Manager, Camera Background).
+  \item Thêm \emph{AR Plane Manager} để phát hiện mặt phẳng, \emph{AR Raycast Manager} để hit-test.
+  \item Đặt vật: bắn ray từ điểm chạm $\to$ \texttt{ARRaycastHit} $\to$ instantiate prefab làm con của trackable, thêm \emph{AR Anchor} nếu cần neo cố định.
+  \item Tracking ảnh: \emph{AR Tracked Image Manager} + Reference Image Library.
+  \item Tracking khuôn mặt: \emph{AR Face Manager} (camera trước).
+  \item Build: iOS (khai báo NSCameraUsageDescription) / Android (API $\geq$ 24, máy hỗ trợ ARCore).
+\end{enumerate}
+\textbf{Mẹo}: dùng \emph{XR Device Simulator} để test không cần kính.
+
+\switchcolumn*
+
+% ---------- 1.11 Challenges ----------
+\subsection*{1.11 Key Challenges}
+\textbf{Cybersickness / Motion sickness}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Causes: (1) sensory mismatch (eyes see motion, vestibular feels none) — \textbf{vection}; (2) \textbf{latency} $>$ 20 ms; (3) low frame rate / dropped frames; (4) wrong IPD; (5) bad lens distortion; (6) artificial locomotion (smooth turn).
+  \item Mitigations: high refresh ($\geq$ 90 Hz), low motion-to-photon latency, \textbf{teleport} or snap-turn instead of smooth, vignette / tunneling during motion, stable horizon reference, comfort settings, fixed-rest frames (virtual nose, cockpit), proper IPD.
+\end{itemize}
+\textbf{AR-specific}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Tracking drift} accumulating over time $\Rightarrow$ loop closure, anchors, relocalization.
+  \item \emph{Occlusion} of virtual by real: requires depth map (LiDAR/ToF) or learned depth.
+  \item \emph{Lighting / shadow consistency}: estimate ambient light intensity + direction (ARKit Light Estimation, spherical harmonics).
+  \item \emph{Registration error}: small camera–display latency $\Rightarrow$ swimming. OST-AR especially sensitive.
+\end{itemize}
+\textbf{Hardware / UX}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Battery, weight, heat, social acceptance ("glasshole"), privacy of always-on cameras, eye safety.
+  \item \emph{Vergence-Accommodation Conflict}, \emph{God rays}, screen-door effect, FOV vs form-factor trade-off.
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{1.11 Thách thức chính}
+\textbf{Say VR (cybersickness)}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Nguyên nhân: (1) lệch giác quan (mắt thấy chuyển động, tai trong không) — \textbf{vection}; (2) \textbf{latency} $>$ 20 ms; (3) FPS thấp / rớt khung; (4) sai IPD; (5) méo lens không sửa đúng; (6) di chuyển nhân tạo (smooth turn).
+  \item Khắc phục: refresh $\geq$ 90 Hz, latency thấp, \textbf{teleport} hoặc snap-turn thay smooth, vignette/tunnel khi di chuyển, có chân trời ổn định, đặt IPD đúng, có khung tham chiếu (mũi ảo, cabin).
+\end{itemize}
+\textbf{Riêng AR}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \emph{Trôi tracking} theo thời gian $\Rightarrow$ loop closure, anchor, relocalization.
+  \item \emph{Occlusion}: cần depth map (LiDAR/ToF) hoặc deep learning.
+  \item \emph{Nhất quán ánh sáng/bóng}: ước lượng cường độ + hướng sáng (Light Estimation, spherical harmonics).
+  \item \emph{Lệch đăng ký}: trễ giữa camera và hiển thị $\Rightarrow$ "trôi". OST-AR rất nhạy cảm.
+\end{itemize}
+\textbf{Phần cứng / UX}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item Pin, trọng lượng, nhiệt, chấp nhận xã hội, riêng tư khi camera bật, an toàn mắt.
+  \item \emph{Vergence-Accommodation Conflict}, \emph{god rays}, screen-door, đánh đổi FOV vs hình dáng.
+\end{itemize}
+
+\switchcolumn*
+
+% ---------- 1.12 Applications ----------
+\subsection*{1.12 Applications (Domains)}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Healthcare}: surgical training (Osso VR, FundamentalVR), \emph{AR surgical navigation} (overlay CT/MRI on patient — Brainlab), exposure therapy (PTSD, phobias), pain distraction, stroke rehab, anatomy education (HoloAnatomy, Complete Anatomy).
+  \item \textbf{Education / Training}: \emph{flight simulators} (high-fidelity, FAA certified), military (squad training, JTAC), industrial (ABB welding, oil-rig safety), classroom (Labster, Google Expeditions / Arts \& Culture).
+  \item \textbf{Entertainment}: gaming (Half-Life: Alyx, Beat Saber, VRChat), immersive cinema (Notes on Blindness), 360-video, location-based VR (The VOID).
+  \item \textbf{Architecture / CAD / AEC}: design walkthroughs (Twinmotion, Enscape), \emph{BIM} visualization (Revit + Unity Reflect), client review.
+  \item \textbf{Cultural heritage}: digital museums (\emph{eMuseum}), virtual reconstruction of ruins (Pompeii VR, Angkor Wat), eTourism, AR guides on-site.
+  \item \textbf{Retail}: virtual try-on (IKEA Place, Warby Parker, Sephora), product configurators, virtual showrooms.
+  \item \textbf{Real estate}: Matterport 3D tours, virtual staging.
+  \item \textbf{Remote collaboration}: Spatial, Horizon Workrooms, Microsoft Mesh, immersive telepresence.
+  \item \textbf{Automotive}: design review (Ford), HUD AR, driver training.
+  \item \textbf{Manufacturing}: AR maintenance instructions (PTC Vuforia, Scope AR), digital twins.
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{1.12 Ứng dụng (lĩnh vực)}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Y tế}: huấn luyện phẫu thuật (Osso VR, FundamentalVR), \emph{điều hướng phẫu thuật AR} (chồng CT/MRI lên bệnh nhân — Brainlab), trị liệu phơi nhiễm (PTSD, ám ảnh), giảm đau, phục hồi đột quỵ, giáo dục giải phẫu (HoloAnatomy).
+  \item \textbf{Giáo dục / Huấn luyện}: \emph{mô phỏng bay} (FAA chứng nhận), quân sự (huấn luyện đội hình, JTAC), công nghiệp (hàn ABB, an toàn giàn khoan), lớp học (Labster, Google Arts \& Culture).
+  \item \textbf{Giải trí}: game (Half-Life: Alyx, Beat Saber, VRChat), phim immersive, 360-video, VR theo địa điểm (The VOID).
+  \item \textbf{Kiến trúc / CAD / AEC}: dạo qua thiết kế (Twinmotion, Enscape), \emph{BIM} (Revit + Unity Reflect), khách hàng duyệt mẫu.
+  \item \textbf{Di sản văn hóa}: bảo tàng số (\emph{eMuseum}), tái dựng phế tích (Pompeii VR, Angkor Wat), eTourism, hướng dẫn AR tại chỗ.
+  \item \textbf{Bán lẻ}: thử đồ ảo (IKEA Place, Warby Parker, Sephora), cấu hình sản phẩm, showroom ảo.
+  \item \textbf{Bất động sản}: tour 3D Matterport, staging ảo.
+  \item \textbf{Cộng tác từ xa}: Spatial, Horizon Workrooms, Microsoft Mesh.
+  \item \textbf{Ô tô}: review thiết kế (Ford), HUD AR, huấn luyện tài xế.
+  \item \textbf{Sản xuất}: hướng dẫn bảo trì AR (Vuforia, Scope AR), digital twin.
+\end{itemize}
+
+\switchcolumn*
+
+% ---------- 1.13 Tools-Techniques mapping ----------
+\subsection*{1.13 Tools $\leftrightarrow$ Techniques Mapping}
+{\scriptsize
+\begin{tabular}{@{}p{2.1cm}p{2.6cm}p{2.4cm}@{}}
+\toprule
+\textbf{Application} & \textbf{Recommended Tool} & \textbf{Key Technique} \\
+\midrule
+Surgical training & Unity + Oculus + haptic & 6DoF tracking, force fb \\
+AR surgery nav. & HoloLens + MRTK & Patient-CT registration, ICP \\
+Anatomy edu. & HoloLens / Quest + MRTK / XRI & Volumetric render, hand tracking \\
+Flight sim & Unreal + Varjo + motion seat & Stereo render, CAVE-like \\
+Museum (eMuseum) & WebXR / Unity + ARFound. & Photogrammetry, image target \\
+Heritage reconstr. & Blender + Unity + Quest & High-poly LOD, baked lighting \\
+eTourism (city) & ARCore Geospatial / 8thWall & VPS, GPS+SLAM \\
+BIM walk-through & Unity Reflect / Twinmotion & IFC import, VR Rig \\
+Furniture try-on & ARKit + RealityKit & Plane det., PBR shading \\
+Industrial maint. & Vuforia Studio / Scope AR & Model target, work-order UI \\
+Education AR book & Unity + Vuforia Image Target & Marker pose, animation \\
+VR exposure ther. & Unity + Quest + biosensor & Procedural anxiety scenes \\
+Remote meeting & Microsoft Mesh / Spatial & Avatar lip-sync, spatial audio \\
+\bottomrule
+\end{tabular}}
+
+\switchcolumn
+
+\subsection*{1.13 Bảng mapping Công cụ $\leftrightarrow$ Kỹ thuật}
+{\scriptsize
+\begin{tabular}{@{}p{2.1cm}p{2.6cm}p{2.4cm}@{}}
+\toprule
+\textbf{Ứng dụng} & \textbf{Công cụ đề xuất} & \textbf{Kỹ thuật chính} \\
+\midrule
+Huấn luyện PT & Unity + Oculus + haptic & Tracking 6DoF, lực phản hồi \\
+PT AR điều hướng & HoloLens + MRTK & Đăng ký CT-bệnh nhân, ICP \\
+Giải phẫu học & HoloLens / Quest + MRTK / XRI & Render thể tích, hand tracking \\
+Mô phỏng bay & Unreal + Varjo + ghế động & Stereo render, kiểu CAVE \\
+Bảo tàng (eMuseum) & WebXR / Unity + ARFound. & Photogrammetry, image target \\
+Tái dựng di sản & Blender + Unity + Quest & LOD đa cấp, bake ánh sáng \\
+eTourism thành phố & ARCore Geospatial / 8thWall & VPS, GPS+SLAM \\
+BIM walkthrough & Unity Reflect / Twinmotion & Import IFC, VR Rig \\
+Thử đồ nội thất & ARKit + RealityKit & Plane det., shader PBR \\
+Bảo trì CN & Vuforia / Scope AR & Model target, UI lệnh việc \\
+Sách AR giáo dục & Unity + Vuforia Image Target & Pose marker, animation \\
+VR phơi nhiễm & Unity + Quest + biosensor & Sinh cảnh lo âu thủ tục \\
+Họp từ xa & Microsoft Mesh / Spatial & Avatar lip-sync, âm thanh KG \\
+\bottomrule
+\end{tabular}}
+
+\switchcolumn*
+
+% ---------- 1.14 Performance metrics ----------
+\subsection*{1.14 Performance \& Evaluation Metrics}
+\textbf{System metrics}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Latency}: motion-to-photon $<$ 20 ms (target $<$ 11 ms). End-to-end = sensor + processing + render + scan-out.
+  \item \textbf{Refresh rate}: 72 / 90 / 120 / 144 Hz.
+  \item \textbf{Jitter}: temporal variation in pose estimate.
+  \item \textbf{FOV}: degrees H $\times$ V (90$^\circ$ entry-level VR, 35–50$^\circ$ AR-OST).
+  \item \textbf{PPD} pixels per degree; \textbf{angular resolution}.
+  \item \textbf{Tracking}: positional accuracy (mm), rotational (deg), drift (cm/min), volume (m$^3$).
+  \item \textbf{Frame time budget}: 90 Hz $\Rightarrow$ 11.1 ms / frame for both eyes.
+\end{itemize}
+\textbf{User metrics (subjective)}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{SSQ} (Simulator Sickness Questionnaire) — Kennedy et al. — nausea, oculomotor, disorientation sub-scales.
+  \item \textbf{IPQ} (Igroup Presence Questionnaire) — spatial presence, involvement, realism.
+  \item \textbf{Witmer–Singer Presence Questionnaire}.
+  \item \textbf{SUS} (Slater–Usoh–Steed) presence; or System Usability Scale.
+  \item \textbf{NASA-TLX} for workload.
+  \item Behavioral: time-on-task, error rate, EDA / heart rate.
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{1.14 Hiệu năng \& Đánh giá}
+\textbf{Đo hệ thống}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Latency}: motion-to-photon $<$ 20 ms (mục tiêu $<$ 11 ms). Tổng = cảm biến + xử lý + render + scan-out.
+  \item \textbf{Refresh}: 72 / 90 / 120 / 144 Hz.
+  \item \textbf{Jitter}: dao động pose theo thời gian.
+  \item \textbf{FOV}: H $\times$ V độ (VR cơ bản 90$^\circ$, AR-OST 35–50$^\circ$).
+  \item \textbf{PPD}; độ phân giải góc.
+  \item \textbf{Tracking}: chính xác vị trí (mm), góc (deg), drift (cm/phút), thể tích (m$^3$).
+  \item \textbf{Ngân sách thời gian khung}: 90 Hz $\Rightarrow$ 11.1 ms/khung cho cả 2 mắt.
+\end{itemize}
+\textbf{Đo người dùng (chủ quan)}:
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{SSQ} — say mô phỏng (buồn nôn, thị giác, mất phương hướng).
+  \item \textbf{IPQ} — presence (không gian, nhập vai, hiện thực).
+  \item \textbf{Witmer–Singer PQ}.
+  \item \textbf{SUS} (Slater–Usoh–Steed) presence; hoặc System Usability Scale.
+  \item \textbf{NASA-TLX} đo tải nhận thức.
+  \item Hành vi: thời gian, tỉ lệ lỗi, EDA / nhịp tim.
+\end{itemize}
+
+\switchcolumn*
+
+% ---------- 1.15 Future trends ----------
+\subsection*{1.15 Future Trends}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Foveated rendering} + eye tracking standard (Quest Pro, PSVR2, Vision Pro).
+  \item \textbf{Pancake lenses} $\Rightarrow$ thinner, lighter HMD.
+  \item \textbf{Varifocal / light-field displays} solve VAC.
+  \item \textbf{Neural rendering}: NeRF, 3D Gaussian Splatting for photo-real scene capture and immersive replay; Instant-NGP for real-time NeRF.
+  \item \textbf{AI-driven content}: text-to-3D (DreamFusion, GET3D), AI avatars, generative environments, ML-based hand/body tracking.
+  \item \textbf{Passthrough MR} convergence (Quest 3, Vision Pro) — VR and AR on same device.
+  \item \textbf{Metaverse / persistent worlds}: shared social VR (Horizon Worlds, VRChat, Roblox).
+  \item \textbf{Cloud / edge XR rendering}: 5G + GeForce NOW-style streaming.
+  \item \textbf{Brain-Computer Interfaces (BCI)}: Neuralink, Galea (EEG/EMG); thought-driven UI.
+  \item \textbf{Haptics evolution}: ultrasound mid-air haptics (Ultraleap), electro-tactile.
+  \item \textbf{Digital twins} of cities and factories (NVIDIA Omniverse, USD).
+  \item \textbf{Standardization}: OpenXR ecosystem; \textbf{glTF} + \textbf{USD} for asset interop.
+  \item \textbf{Privacy / ethics}: gaze data, biometric identification, mixed-reality bystanders.
+\end{itemize}
+
+\switchcolumn
+
+\subsection*{1.15 Xu hướng tương lai}
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Foveated rendering} + eye tracking thành tiêu chuẩn (Quest Pro, PSVR2, Vision Pro).
+  \item \textbf{Thấu kính pancake} $\Rightarrow$ HMD mỏng nhẹ.
+  \item \textbf{Varifocal / light-field} giải quyết VAC.
+  \item \textbf{Neural rendering}: NeRF, 3D Gaussian Splatting cho dựng cảnh siêu thực; Instant-NGP cho NeRF thời gian thực.
+  \item \textbf{Nội dung AI}: text-to-3D (DreamFusion, GET3D), avatar AI, môi trường sinh, tracking tay/cơ thể bằng ML.
+  \item \textbf{MR passthrough hội tụ}: Quest 3, Vision Pro — VR và AR trên cùng thiết bị.
+  \item \textbf{Metaverse / thế giới bền}: VR xã hội (Horizon Worlds, VRChat, Roblox).
+  \item \textbf{Render đám mây/biên}: 5G + streaming kiểu GeForce NOW.
+  \item \textbf{BCI}: Neuralink, Galea (EEG/EMG); UI điều khiển bằng suy nghĩ.
+  \item \textbf{Haptic mới}: siêu âm chạm không khí (Ultraleap), điện-xúc giác.
+  \item \textbf{Digital twin} của thành phố, nhà máy (NVIDIA Omniverse, USD).
+  \item \textbf{Chuẩn hóa}: OpenXR; \textbf{glTF} + \textbf{USD} cho liên thông tài sản.
+  \item \textbf{Riêng tư / đạo đức}: dữ liệu gaze, định danh sinh trắc, người ngoài cuộc trong MR.
+\end{itemize}
+
+\switchcolumn*
+
+% ---------- 1.16 Quick reference ----------
+\subsection*{1.16 Quick Reference Numbers}
+{\scriptsize
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Quantity} & \textbf{Min OK} & \textbf{Good} \\
+\midrule
+Refresh rate & 72 Hz & 90–120 Hz \\
+M2P latency & $<$ 20 ms & $<$ 11 ms \\
+FOV (VR) & 90$^\circ$ & 110$^\circ$+ \\
+FOV (AR-OST) & 30$^\circ$ & 50$^\circ$+ \\
+PPD & 15 & 30–60 \\
+IPD range & 60–66 mm & 55–72 mm \\
+Tracking accuracy & 5 mm / 1$^\circ$ & $<$ 1 mm / 0.1$^\circ$ \\
+Frame time @ 90 Hz & 11.1 ms & — \\
+\bottomrule
+\end{tabular}\\[2pt]
+\textbf{Common abbreviations}: HMD, FOV, IPD, PPD, DoF, IMU, SLAM, VIO, VST, OST, MR, XR, ATW, ASW, VAC, SDE, SSQ, IPQ, NeRF, LiDAR, ToF, HRTF, BCI.}
+
+\switchcolumn
+
+\subsection*{1.16 Tham chiếu nhanh}
+{\scriptsize
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Đại lượng} & \textbf{Tối thiểu} & \textbf{Tốt} \\
+\midrule
+Tần số quét & 72 Hz & 90–120 Hz \\
+Trễ M2P & $<$ 20 ms & $<$ 11 ms \\
+FOV (VR) & 90$^\circ$ & 110$^\circ$+ \\
+FOV (AR-OST) & 30$^\circ$ & 50$^\circ$+ \\
+PPD & 15 & 30–60 \\
+Khoảng IPD & 60–66 mm & 55–72 mm \\
+Độ chính xác tracking & 5 mm / 1$^\circ$ & $<$ 1 mm / 0.1$^\circ$ \\
+Thời gian khung @ 90 Hz & 11.1 ms & — \\
+\bottomrule
+\end{tabular}\\[2pt]
+\textbf{Viết tắt thường gặp}: HMD, FOV, IPD, PPD, DoF, IMU, SLAM, VIO, VST, OST, MR, XR, ATW, ASW, VAC, SDE, SSQ, IPQ, NeRF, LiDAR, ToF, HRTF, BCI.}
+
+\end{paracol}

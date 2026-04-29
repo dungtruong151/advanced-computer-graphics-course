@@ -1,0 +1,138 @@
+% =====================================================================
+% 00_formula_sheet.tex  --  Last-Minute Formula Sheet  (single page)
+% Bilingual EN | VI  --  IT516 Advanced Computer Graphics final exam
+% =====================================================================
+
+\section*{Last-Minute Formula Sheet \,/\, Công thức cấp tốc}
+\scriptsize
+\setlength{\columnsep}{8pt}
+\setlength{\abovedisplayskip}{1pt}
+\setlength{\belowdisplayskip}{1pt}
+\setlength{\abovedisplayshortskip}{1pt}
+\setlength{\belowdisplayshortskip}{1pt}
+\setlist[itemize]{leftmargin=*,nosep,topsep=0pt,parsep=0pt,partopsep=0pt,itemsep=0pt}
+
+\begin{multicols}{2}
+
+%==================== 1. BEZIER CURVES ====================
+\textbf{1. Bezier Curves \,|\, Đường cong Bezier}\\
+\emph{Remember / Nhớ:} degree $n \Rightarrow n{+}1$ control points.
+\begin{itemize}
+\item General: $B(t)=\sum_{i=0}^{n}\binom{n}{i}(1-t)^{n-i}t^{i}P_i$
+\item $n{=}1$: $B(t)=(1-t)P_0+tP_1$
+\item $n{=}2$: $B(t)=(1-t)^2P_0+2(1-t)tP_1+t^2P_2$
+\item $n{=}3$: $B(t)=(1-t)^3P_0+3(1-t)^2tP_1+3(1-t)t^2P_2+t^3P_3$
+\item Tangent: $B'(0)=n(P_1-P_0)$,\; $B'(1)=n(P_n-P_{n-1})$
+\item $B'(t)=n\sum_{i=0}^{n-1}B_i^{n-1}(t)(P_{i+1}-P_i)$
+\item Degree elevate: $P'_i=\tfrac{i}{n+1}P_{i-1}+(1-\tfrac{i}{n+1})P_i$
+\end{itemize}
+
+%==================== 2. DE CASTELJAU ====================
+\textbf{2. De Casteljau \,|\, Thuật toán De Casteljau}\\
+\emph{Remember:} pyramid of lerps; gives point + subdivision.
+\begin{itemize}
+\item $P_i^{(0)}=P_i$;\; $P_i^{(k)}(t)=(1-t)P_i^{(k-1)}+tP_{i+1}^{(k-1)}$
+\item Curve point: $B(t)=P_0^{(n)}(t)$
+\item Subdivide @ $t$: left $=\{P_0^{(0)},P_0^{(1)},\dots,P_0^{(n)}\}$
+\item \phantom{Subdivide @ $t$:} right $=\{P_0^{(n)},P_1^{(n-1)},\dots,P_n^{(0)}\}$
+\end{itemize}
+
+%==================== 3. BERNSTEIN VALUES ====================
+\textbf{3. Bernstein @ common $t$ \,|\, Giá trị Bernstein}\\
+\emph{Remember:} symmetric, sums to 1.
+\begin{itemize}
+\item $t{=}0.5$:\; $B^3=(\tfrac{1}{8},\tfrac{3}{8},\tfrac{3}{8},\tfrac{1}{8})$
+\item $t{=}0.5$:\; $B^4=(\tfrac{1}{16},\tfrac{4}{16},\tfrac{6}{16},\tfrac{4}{16},\tfrac{1}{16})$
+\item $t{=}0.25$:\; $B^3=(\tfrac{27}{64},\tfrac{27}{64},\tfrac{9}{64},\tfrac{1}{64})$
+\item $t{=}0.75$:\; $B^3=(\tfrac{1}{64},\tfrac{9}{64},\tfrac{27}{64},\tfrac{27}{64})$
+\end{itemize}
+
+%==================== 4. BEZIER SURFACE ====================
+\textbf{4. Bezier Surface \,|\, Mặt cong Bezier}\\
+\emph{Remember:} bicubic = 4$\times$4 = 16 points.
+\begin{itemize}
+\item $S(u,v)=\sum_{i}\sum_{j}B_i^m(u)B_j^n(v)P_{ij}$
+\item Bicubic ($m{=}n{=}3$): 16 control points
+\item @ $(0.5,0.5)$ bicubic: $w_{ij}=B_i^3(0.5)B_j^3(0.5)$
+\item Weights: corners $\tfrac{1}{64}$, edges $\tfrac{3}{64}$, inner $\tfrac{9}{64}$
+\end{itemize}
+
+%==================== 5. GEOMETRIC MODELING ====================
+\textbf{5. Geometric Modeling \,|\, Mô hình hình học}\\
+\emph{Remember:} QEM = quadric per plane; Taubin = no shrink.
+\begin{itemize}
+\item QEM: $\Delta(v)=v^{T}Qv$,\; $Q=\sum_p K_p$,\; $K=nn^{T}$ (4$\times$4)
+\item Laplacian: $L(v_i)=\tfrac{1}{|N(i)|}\sum_{j\in N(i)}(v_j-v_i)$
+\item Update: $v'=v+\lambda L(v)$
+\item Taubin: alternate $\lambda{>}0$ then $\mu{<}0$,\; $|\mu|{>}\lambda$
+\item Bilateral: $v'=v+n\dfrac{\sum w_c(\|v_i-v\|)w_s(\langle n,v_i-v\rangle)\langle n,v_i-v\rangle}{\sum w_c w_s}$
+\item In-circle (CCW): $\det\!\begin{pmatrix}a-d&\|a-d\|^2\\b-d&\|b-d\|^2\\c-d&\|c-d\|^2\end{pmatrix}\!>0$
+\item SOR: keep if $\bar d_{kNN}<\mu+\alpha\sigma$
+\item Liepa: $W(i,j)=\min_{i<m<j}W(i,m)+W(m,j)+w(\triangle v_iv_mv_j)$
+\end{itemize}
+
+\columnbreak
+
+%==================== 6. MEDICAL IMAGING ====================
+\textbf{6. Medical Imaging \,|\, Ảnh y tế}\\
+\emph{Remember:} HU air $-1000$, water $0$, bone $+400$ to $+1000$.
+\begin{itemize}
+\item $\mathrm{HU}=1000(\mu-\mu_w)/\mu_w$
+\item Larmor: $\omega_0=\gamma B_0$,\; $\gamma_{^1H}/2\pi=42.58$\,MHz/T
+\item FBP: $f(x,y)=\int_0^{\pi}\tilde p(x\cos\theta+y\sin\theta,\theta)\,d\theta$
+\item \phantom{FBP: } $\tilde p=\mathcal{F}^{-1}(|\omega|P)$
+\item MC edge: $p=p_a+\tfrac{T-V_a}{V_b-V_a}(p_b-p_a)$
+\item Otsu: $\arg\max_T w_0w_1(\mu_0-\mu_1)^2$
+\item Snake: $E=\int(\alpha|C'|^2+\beta|C''|^2+E_{ext})\,ds$
+\item Level set: $\partial\phi/\partial t+F|\nabla\phi|=0$
+\item MI: $\mathrm{MI}(X,Y)=H(X)+H(Y)-H(X,Y)$
+\item DVR (front-to-back): $C_{out}=C_{in}(1-\alpha)+C\alpha$
+\end{itemize}
+
+%==================== 7. SEGMENTATION METRICS ====================
+\textbf{7. Segmentation Metrics \,|\, Chỉ số phân vùng}\\
+\emph{Remember:} Dice $=$ F1; IoU $= D/(2-D)$.
+\begin{itemize}
+\item Dice: $D=2|A\cap B|/(|A|+|B|)$
+\item IoU/Jaccard: $J=|A\cap B|/|A\cup B|=D/(2-D)$
+\item HD95: 95th-percentile of surface distances
+\item ASSD: $\tfrac{1}{|S_A|+|S_B|}\!\left(\!\sum_{a\in S_A}\!d(a,S_B)+\!\sum_{b\in S_B}\!d(b,S_A)\!\right)$
+\item Sens $=TP/(TP{+}FN)$;\; Spec $=TN/(TN{+}FP)$
+\item Prec $=TP/(TP{+}FP)$;\; Rec $=$ Sens
+\item $F_1=2PR/(P{+}R)=$ Dice
+\end{itemize}
+
+%==================== 8. VR / AR ====================
+\textbf{8. VR/AR Numbers \,|\, Thông số VR/AR}\\
+\emph{Remember:} $<20$\,ms latency, $\geq 90$\,Hz refresh.
+\begin{itemize}
+\item Motion-to-photon latency: $<20$\,ms
+\item Refresh: $\geq 90$\,Hz (VR), $120{+}$\,Hz preferred
+\item FOV: $100$--$110^{\circ}$ typical (Quest 3 $\sim 110^{\circ}$)
+\item IPD: $58$--$72$\,mm
+\item 6DoF $=$ 3 position $+$ 3 orientation
+\item AR pipeline: capture $\to$ feature $\to$ pose (PnP) $\to$ render $\to$ composite
+\end{itemize}
+
+%==================== 9. BRATS SUB-REGIONS ====================
+\textbf{9. BraTS Sub-regions \,|\, Vùng khối u BraTS}\\
+\emph{Remember:} WT $\supset$ TC $\supset$ ET.
+\begin{itemize}
+\item WT (Whole Tumor) $=$ ET $\cup$ NCR $\cup$ ED (edema)
+\item TC (Tumor Core) $=$ ET $\cup$ NCR
+\item ET (Enhancing Tumor): only contrast-enhancing
+\end{itemize}
+
+%==================== 10. PASCAL TRIANGLE ====================
+\textbf{10. Pascal Triangle \,|\, Tam giác Pascal}\\
+\emph{Remember:} row $n$ = Bernstein numerators for degree $n$.
+\begin{itemize}
+\item $n{=}0$:\; $1$
+\item $n{=}1$:\; $1\;\;1$
+\item $n{=}2$:\; $1\;\;2\;\;1$
+\item $n{=}3$:\; $1\;\;3\;\;3\;\;1$
+\item $n{=}4$:\; $1\;\;4\;\;6\;\;4\;\;1$
+\item $n{=}5$:\; $1\;\;5\;\;10\;\;10\;\;5\;\;1$
+\end{itemize}
+
+\end{multicols}

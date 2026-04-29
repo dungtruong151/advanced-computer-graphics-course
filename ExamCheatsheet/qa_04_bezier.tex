@@ -1,0 +1,640 @@
+\begin{paracol}{2}
+\section*{QA4. Theoretical Q\&A — Bezier \& De Casteljau}
+
+\textbf{Q1. What is a Bezier curve? Write the formula.}\\
+A \textbf{Bezier curve} of degree $n$ is a parametric polynomial curve defined by $n+1$ \textbf{control points} $P_0, P_1, \ldots, P_n$ and the \textbf{Bernstein basis}. The curve is
+\[ B(t) = \sum_{i=0}^{n} \binom{n}{i}(1-t)^{n-i} t^{i} P_i, \quad t \in [0,1]. \]
+It \textbf{interpolates} $P_0$ and $P_n$, only \textbf{approximates} the inner points, and lies inside the \textbf{convex hull} of its control polygon. Cubic ($n=3$) Beziers are the workhorse in fonts, SVG, and animation curves because they are smooth, intuitive, and cheap to evaluate.
+
+\switchcolumn
+
+\section*{QA4. Câu hỏi lý thuyết — Bezier \& De Casteljau}
+
+\textbf{Câu 1. Đường cong Bezier là gì? Viết công thức.}\\
+\textbf{Đường cong Bezier} bậc $n$ là đường cong tham số dạng đa thức được định nghĩa bởi $n+1$ \textbf{control point} $P_0, P_1, \ldots, P_n$ và \textbf{Bernstein basis}. Công thức:
+\[ B(t) = \sum_{i=0}^{n} \binom{n}{i}(1-t)^{n-i} t^{i} P_i, \quad t \in [0,1]. \]
+Đường cong \textbf{nội suy} (đi qua) $P_0$ và $P_n$, chỉ \textbf{xấp xỉ} các điểm giữa, và luôn nằm trong \textbf{convex hull} của control polygon. Bezier bậc 3 ($n=3$) phổ biến nhất trong font, SVG, animation vì mượt, trực quan và rẻ để tính.
+
+\switchcolumn*
+
+\textbf{Q2. What are control points and the control polygon?}\\
+\textbf{Control points} $P_0, \ldots, P_n$ are the user-editable handles that shape a Bezier curve. The polyline connecting them in order, $P_0 P_1 \cdots P_n$, is the \textbf{control polygon}. Only the endpoints $P_0$ and $P_n$ are touched by the curve; intermediate points pull the curve towards themselves but never lie on it (in general). The control polygon gives a quick visual approximation of the curve and bounds it inside its convex hull. Designers manipulate control points instead of sampling the curve directly.
+
+\switchcolumn
+
+\textbf{Câu 2. Control point và control polygon là gì?}\\
+\textbf{Control point} $P_0, \ldots, P_n$ là các điểm điều khiển mà người dùng kéo thả để tạo hình đường Bezier. Đường gấp khúc nối chúng theo thứ tự $P_0 P_1 \cdots P_n$ gọi là \textbf{control polygon}. Chỉ $P_0$ và $P_n$ nằm trên curve; các điểm giữa chỉ \textbf{kéo} curve về phía chúng. Control polygon cho ta hình dung nhanh dáng curve và giới hạn curve trong convex hull của nó. Designer chỉnh control point thay vì lấy mẫu trực tiếp trên curve.
+
+\switchcolumn*
+
+\textbf{Q3. What is the Bernstein polynomial? Write the formula.}\\
+The \textbf{Bernstein polynomial} of degree $n$, index $i$, is
+\[ B_{i,n}(t) = \binom{n}{i}(1-t)^{n-i} t^{i}, \quad i = 0, 1, \ldots, n. \]
+For example, the cubic Bernsteins are $B_{0,3}=(1-t)^3$, $B_{1,3}=3(1-t)^2 t$, $B_{2,3}=3(1-t)t^2$, $B_{3,3}=t^3$. They are non-negative on $[0,1]$, sum to $1$, are symmetric ($B_{i,n}(t)=B_{n-i,n}(1-t)$), and have a single peak at $t=i/n$. They serve as \textbf{blending functions} that mix the control points.
+
+\switchcolumn
+
+\textbf{Câu 3. Bernstein polynomial là gì? Viết công thức.}\\
+\textbf{Bernstein polynomial} bậc $n$, chỉ số $i$:
+\[ B_{i,n}(t) = \binom{n}{i}(1-t)^{n-i} t^{i}, \quad i = 0, 1, \ldots, n. \]
+Ví dụ, Bernstein bậc 3: $B_{0,3}=(1-t)^3$, $B_{1,3}=3(1-t)^2 t$, $B_{2,3}=3(1-t)t^2$, $B_{3,3}=t^3$. Chúng \textbf{không âm} trên $[0,1]$, \textbf{tổng bằng 1}, \textbf{đối xứng} ($B_{i,n}(t)=B_{n-i,n}(1-t)$), đạt cực đại tại $t=i/n$. Đóng vai trò \textbf{blending function} trộn các control point.
+
+\switchcolumn*
+
+\textbf{Q4. What is the Bernstein basis?}\\
+The set $\{B_{0,n}(t), B_{1,n}(t), \ldots, B_{n,n}(t)\}$ is a \textbf{basis} of the polynomial space $\mathbb{P}_n$ (polynomials of degree $\le n$). Any polynomial of degree $\le n$ can be written uniquely as $\sum c_i B_{i,n}(t)$. Compared with the \textbf{monomial basis} $\{1, t, t^2, \ldots\}$, the Bernstein basis is much better conditioned numerically on $[0,1]$ and the coefficients $c_i$ have a clear geometric meaning — they are control points. This is the algebraic reason Bezier curves are well-behaved.
+
+\switchcolumn
+
+\textbf{Câu 4. Bernstein basis là gì?}\\
+Tập $\{B_{0,n}(t), \ldots, B_{n,n}(t)\}$ là một \textbf{cơ sở} của không gian đa thức $\mathbb{P}_n$ (đa thức bậc $\le n$). Mọi đa thức bậc $\le n$ viết duy nhất dạng $\sum c_i B_{i,n}(t)$. So với \textbf{monomial basis} $\{1, t, t^2, \ldots\}$, Bernstein basis \textbf{ổn định số} hơn trên $[0,1]$ và hệ số $c_i$ có ý nghĩa hình học rõ — chính là control point. Đây là lý do đại số khiến Bezier "ngoan".
+
+\switchcolumn*
+
+\textbf{Q5. What is the parameter $t$ in a Bezier curve?}\\
+The \textbf{parameter} $t \in [0,1]$ is the abstract "time" or "progress" along the curve: $t=0$ gives $P_0$, $t=1$ gives $P_n$, and intermediate $t$ values give points along the curve. It is \textbf{not} arc length — equal steps in $t$ do \textbf{not} produce equally spaced points on the curve, so re-parametrization (arc-length parametrization) is needed for uniform-speed animation. We can also extend $t$ outside $[0,1]$ to extrapolate, but the convex hull guarantee is then lost.
+
+\switchcolumn
+
+\textbf{Câu 5. Tham số $t$ trong Bezier là gì?}\\
+\textbf{Tham số} $t \in [0,1]$ là "thời gian" trừu tượng dọc theo curve: $t=0$ cho $P_0$, $t=1$ cho $P_n$, các giá trị giữa cho các điểm dọc curve. \textbf{Không phải} arc length — chia đều $t$ \textbf{không} cho điểm cách đều trên curve, nên cần re-parametrize theo arc length nếu muốn animation chạy đều. Có thể extend $t$ ngoài $[0,1]$ để ngoại suy nhưng mất tính chất convex hull.
+
+\switchcolumn*
+
+\textbf{Q6. What is a Bezier surface? Tensor product formula.}\\
+A \textbf{Bezier surface} of degree $(m, n)$ uses an $(m{+}1)\times(n{+}1)$ grid of control points $P_{i,j}$, called the \textbf{control net}. It is the \textbf{tensor product} of two univariate Beziers:
+\[ S(u, v) = \sum_{i=0}^{m} \sum_{j=0}^{n} B_{i,m}(u) B_{j,n}(v) P_{i,j}, \quad (u,v)\in[0,1]^2. \]
+For each fixed $v$, $S(\cdot, v)$ is a Bezier curve in $u$, and vice versa. The \textbf{bicubic patch} ($m=n=3$, 16 control points) is the standard CAD primitive.
+
+\switchcolumn
+
+\textbf{Câu 6. Bezier surface là gì? Công thức tensor product.}\\
+\textbf{Bezier surface} bậc $(m, n)$ dùng lưới $(m{+}1)\times(n{+}1)$ control point $P_{i,j}$ gọi là \textbf{control net}. Là \textbf{tensor product} của hai Bezier 1 chiều:
+\[ S(u, v) = \sum_{i=0}^{m} \sum_{j=0}^{n} B_{i,m}(u) B_{j,n}(v) P_{i,j}, \quad (u,v)\in[0,1]^2. \]
+Cố định $v$ thì $S(\cdot, v)$ là Bezier curve theo $u$, và ngược lại. \textbf{Bicubic patch} ($m=n=3$, 16 control point) là primitive chuẩn trong CAD.
+
+\switchcolumn*
+
+\textbf{Q7. What is a control net?}\\
+A \textbf{control net} is the 2D analogue of a control polygon: a topologically rectangular grid $\{P_{i,j}\}_{0\le i\le m,\, 0\le j\le n}$ of control points that defines a Bezier surface. The four \textbf{corners} of the net lie on the surface; the four \textbf{boundary curves} are themselves Bezier curves of the boundary rows/columns; interior points only pull the surface. The net's convex hull contains the surface — a useful bound for collision detection and rendering culling.
+
+\switchcolumn
+
+\textbf{Câu 7. Control net là gì?}\\
+\textbf{Control net} là phiên bản 2D của control polygon: lưới chữ nhật $\{P_{i,j}\}$ định nghĩa Bezier surface. Bốn \textbf{góc} của net nằm trên surface; bốn \textbf{boundary curve} cũng là Bezier curve của các hàng/cột biên; điểm trong chỉ \textbf{kéo} surface. Convex hull của net bao toàn surface — hữu ích cho collision detection và culling khi render.
+
+\switchcolumn*
+
+\textbf{Q8. List the key properties of Bezier curves.}\\
+(1) \textbf{Endpoint interpolation}: $B(0)=P_0$, $B(1)=P_n$.
+(2) \textbf{Convex hull}: curve $\subseteq$ convex hull of control polygon.
+(3) \textbf{Affine invariance}: applying an affine map to control points = applying it to the curve.
+(4) \textbf{Variation diminishing}: the curve is no more wiggly than its control polygon.
+(5) \textbf{Symmetry}: reversing control points reverses the curve.
+(6) \textbf{Tangent at endpoints}: $B'(0)=n(P_1-P_0)$, $B'(1)=n(P_n-P_{n-1})$.
+(7) \textbf{Partition of unity}: $\sum_i B_{i,n}(t)=1$.
+(8) \textbf{Polynomial precision}: any polynomial of degree $\le n$ is reproducible.
+
+\switchcolumn
+
+\textbf{Câu 8. Liệt kê các tính chất chính của Bezier curve.}\\
+(1) \textbf{Nội suy đầu mút}: $B(0)=P_0$, $B(1)=P_n$.
+(2) \textbf{Convex hull}: curve nằm trong convex hull của control polygon.
+(3) \textbf{Affine invariance}: phép affine lên control point = lên curve.
+(4) \textbf{Variation diminishing}: curve không "lượn" nhiều hơn control polygon.
+(5) \textbf{Đối xứng}: đảo ngược control point thì đảo ngược curve.
+(6) \textbf{Tiếp tuyến đầu mút}: $B'(0)=n(P_1-P_0)$, $B'(1)=n(P_n-P_{n-1})$.
+(7) \textbf{Partition of unity}: $\sum_i B_{i,n}(t)=1$.
+(8) \textbf{Polynomial precision}: tái tạo được mọi đa thức bậc $\le n$.
+
+\switchcolumn*
+
+\textbf{Q9. Endpoint interpolation property?}\\
+At $t=0$, all Bernstein values vanish except $B_{0,n}(0)=1$, so $B(0)=P_0$. At $t=1$, all vanish except $B_{n,n}(1)=1$, giving $B(1)=P_n$. Hence the curve always passes \textbf{exactly} through the first and last control points. This makes Bezier ideal for \textbf{stitching} curves end-to-end (e.g.\ glyph contours, animation paths) because matching neighbours is just placing $P_n$ of one curve at $P_0$ of the next.
+
+\switchcolumn
+
+\textbf{Câu 9. Tính chất nội suy đầu mút?}\\
+Tại $t=0$, mọi Bernstein bằng 0 trừ $B_{0,n}(0)=1$, nên $B(0)=P_0$. Tại $t=1$, mọi Bernstein bằng 0 trừ $B_{n,n}(1)=1$, nên $B(1)=P_n$. Do đó curve luôn đi \textbf{chính xác} qua điểm đầu và cuối. Điều này làm Bezier lý tưởng để \textbf{ghép nối} curve liên tiếp (đường viền glyph, animation path) vì chỉ cần đặt $P_n$ của curve này trùng $P_0$ của curve sau.
+
+\switchcolumn*
+
+\textbf{Q10. Explain the convex hull property.}\\
+For every $t \in [0,1]$, the Bernstein values $B_{i,n}(t)$ are non-negative and sum to 1, so $B(t)=\sum B_{i,n}(t) P_i$ is a \textbf{convex combination} of the control points. Thus $B(t)$ lies in the \textbf{convex hull} of $\{P_0,\ldots,P_n\}$. Practical consequences: (i) bounding box for rendering and collision culling; (ii) guarantees the curve does not "shoot off" wildly even with bad control points; (iii) used in subdivision-based intersection algorithms.
+
+\switchcolumn
+
+\textbf{Câu 10. Giải thích tính chất convex hull.}\\
+Với mọi $t \in [0,1]$, các Bernstein $B_{i,n}(t) \ge 0$ và tổng bằng 1, nên $B(t)=\sum B_{i,n}(t) P_i$ là \textbf{tổ hợp lồi} của control point. Do đó $B(t)$ nằm trong \textbf{convex hull} của $\{P_0,\ldots,P_n\}$. Ứng dụng: (i) bounding box cho render và collision culling; (ii) đảm bảo curve không "bay" lung tung dù control point xấu; (iii) dùng trong thuật toán intersection bằng subdivision.
+
+\switchcolumn*
+
+\textbf{Q11. Why does the curve always stay inside the control polygon?}\\
+Because partition of unity ($\sum B_{i,n}(t)=1$) plus non-negativity ($B_{i,n}(t)\ge 0$) means each $B(t)$ is a \textbf{convex combination} of the control points. A convex combination always lies inside the \textbf{convex hull}, which is contained in (or equals) the bounding region of the control polygon. Geometric intuition: the Bernsteins "blend" control points like weights summing to 1, so the result cannot escape the cluster of points.
+
+\switchcolumn
+
+\textbf{Câu 11. Vì sao curve luôn nằm trong control polygon?}\\
+Vì partition of unity ($\sum B_{i,n}(t)=1$) cộng với không âm ($B_{i,n}(t)\ge 0$) nghĩa là mỗi $B(t)$ là \textbf{tổ hợp lồi} của các control point. Tổ hợp lồi luôn nằm trong \textbf{convex hull}, mà convex hull bị bao bởi (hoặc trùng) miền của control polygon. Trực quan: Bernsteins "trộn" các control point như các trọng số tổng bằng 1 nên kết quả không thể "bay" ra khỏi cụm điểm.
+
+\switchcolumn*
+
+\textbf{Q12. Partition of unity — why does it matter?}\\
+\textbf{Partition of unity} states $\sum_{i=0}^n B_{i,n}(t)=1$ for all $t$. This is what guarantees \textbf{affine invariance} (translating all control points by $v$ translates the curve by $v$) and the \textbf{convex hull} property (when combined with non-negativity). Without it, simply moving the world would change the shape — clearly nonsensical for a geometric primitive. Algebraically it follows from the binomial theorem: $\sum \binom{n}{i}(1-t)^{n-i}t^i=((1-t)+t)^n=1$.
+
+\switchcolumn
+
+\textbf{Câu 12. Partition of unity — vì sao quan trọng?}\\
+\textbf{Partition of unity} nghĩa là $\sum_{i=0}^n B_{i,n}(t)=1$ với mọi $t$. Đây là điều đảm bảo \textbf{affine invariance} (dịch tất cả control point đi $v$ thì curve cũng dịch $v$) và \textbf{convex hull} (khi kết hợp với không âm). Không có nó, việc dịch chuyển thế giới sẽ làm biến dạng curve — vô lý cho một primitive hình học. Đại số: từ nhị thức Newton $\sum \binom{n}{i}(1-t)^{n-i}t^i=((1-t)+t)^n=1$.
+
+\switchcolumn*
+
+\textbf{Q13. What is affine invariance? Why important?}\\
+\textbf{Affine invariance} means: for any affine map $T$ (translation, rotation, scale, shear), applying $T$ to all control points and then evaluating the curve gives the same result as evaluating first then applying $T$, i.e.\ $T(B(t))=\sum B_{i,n}(t)\, T(P_i)$. Important because the entire 3D pipeline (modelview matrix) is affine — we can transform \textbf{just} the control points (cheap, $O(n)$) instead of every sampled point on the curve. This is why graphics APIs store curves as control points, not tessellated meshes.
+
+\switchcolumn
+
+\textbf{Câu 13. Affine invariance là gì? Quan trọng vì sao?}\\
+\textbf{Affine invariance}: với mọi phép affine $T$ (translation, rotation, scale, shear), áp $T$ lên control point rồi tính curve bằng tính curve rồi áp $T$, tức $T(B(t))=\sum B_{i,n}(t)\, T(P_i)$. Quan trọng vì toàn bộ pipeline 3D (modelview matrix) đều affine — ta chỉ cần transform \textbf{control point} (rẻ, $O(n)$) thay vì transform mọi điểm sampled. Vì vậy graphics API lưu curve dạng control point, không phải mesh đã tessellate.
+
+\switchcolumn*
+
+\textbf{Q14. What is the variation diminishing property?}\\
+\textbf{Variation diminishing}: any straight line $L$ intersects the Bezier curve at most as many times as it intersects the control polygon. So the curve cannot "wiggle" more than its polygon — it is a \textbf{smoothed} version of the polygon. Practical meaning: if the polygon is convex, so is the curve; if the polygon is monotone in $x$, so is the curve. This is why drag-editing Bezier control points feels predictable to designers.
+
+\switchcolumn
+
+\textbf{Câu 14. Variation diminishing là gì?}\\
+\textbf{Variation diminishing}: mọi đường thẳng $L$ cắt Bezier curve không nhiều hơn số lần cắt control polygon. Curve không thể "lượn" nhiều hơn polygon — là phiên bản \textbf{smoothed} của polygon. Ý nghĩa: nếu polygon lồi thì curve lồi; polygon đơn điệu theo $x$ thì curve cũng vậy. Đó là lý do drag control point trong design tool rất "predictable".
+
+\switchcolumn*
+
+\textbf{Q15. Symmetry property?}\\
+The Bernstein basis satisfies $B_{i,n}(t)=B_{n-i,n}(1-t)$. Consequently, if we \textbf{reverse} the control points to $P_n, P_{n-1}, \ldots, P_0$, the resulting curve traces the \textbf{same geometric shape} but with parameter direction reversed: $B_{\text{rev}}(t)=B(1-t)$. There is no algorithmic preference for the "front" or "back" of a Bezier curve — symmetry is built in. This simplifies many derivations (e.g.\ analyses at $t=1$ are mirror images of analyses at $t=0$).
+
+\switchcolumn
+
+\textbf{Câu 15. Tính đối xứng?}\\
+Bernstein basis có $B_{i,n}(t)=B_{n-i,n}(1-t)$. Hệ quả: nếu \textbf{đảo ngược} control point thành $P_n, P_{n-1}, \ldots, P_0$, curve vẽ \textbf{cùng hình} nhưng hướng tham số ngược: $B_{\text{rev}}(t)=B(1-t)$. Không có "đầu" hay "đuôi" ưu tiên — đối xứng là built-in. Đơn giản hoá nhiều suy luận (phân tích tại $t=1$ chỉ là ảnh gương của tại $t=0$).
+
+\switchcolumn*
+
+\textbf{Q16. Tangents at the endpoints of a Bezier curve?}\\
+Differentiating, the derivative of a Bezier curve of degree $n$ is itself a Bezier of degree $n-1$ with control points $n(P_{i+1}-P_i)$:
+\[ B'(t) = n \sum_{i=0}^{n-1} B_{i,n-1}(t)\,(P_{i+1}-P_i). \]
+At endpoints: $B'(0)=n(P_1-P_0)$ and $B'(1)=n(P_n-P_{n-1})$. So the curve leaves $P_0$ tangent to the segment $\overline{P_0 P_1}$ and arrives at $P_n$ tangent to $\overline{P_{n-1}P_n}$, with magnitudes scaled by $n$. This is exactly why dragging the second control point rotates the start tangent.
+
+\switchcolumn
+
+\textbf{Câu 16. Tiếp tuyến tại đầu mút Bezier?}\\
+Lấy đạo hàm, derivative của Bezier bậc $n$ là Bezier bậc $n-1$ với control point $n(P_{i+1}-P_i)$:
+\[ B'(t) = n \sum_{i=0}^{n-1} B_{i,n-1}(t)\,(P_{i+1}-P_i). \]
+Tại đầu mút: $B'(0)=n(P_1-P_0)$ và $B'(1)=n(P_n-P_{n-1})$. Curve rời $P_0$ tiếp xúc đoạn $\overline{P_0 P_1}$, đến $P_n$ tiếp xúc $\overline{P_{n-1}P_n}$, độ lớn nhân $n$. Vì vậy kéo control point thứ hai sẽ xoay tangent đầu.
+
+\switchcolumn*
+
+\textbf{Q17. What is the De Casteljau algorithm? Why useful?}\\
+\textbf{De Casteljau} evaluates a Bezier curve at parameter $t$ by \textbf{repeated linear interpolation} of control points. Given $\{P_i\}$, set $P_i^{(0)}=P_i$ and recurse $P_i^{(k)}=(1-t)P_i^{(k-1)}+t\,P_{i+1}^{(k-1)}$ until a single point $P_0^{(n)}=B(t)$ remains. It is \textbf{numerically stable} (only convex combinations), works in any dimension, and as a side effect produces \textbf{subdivision} control points for free. It costs $O(n^2)$ multiplications — fine for typical $n=3$.
+
+\switchcolumn
+
+\textbf{Câu 17. De Casteljau là gì? Vì sao hữu ích?}\\
+\textbf{De Casteljau} tính Bezier tại $t$ bằng cách \textbf{nội suy tuyến tính lặp} các control point. Cho $\{P_i\}$, đặt $P_i^{(0)}=P_i$ và đệ quy $P_i^{(k)}=(1-t)P_i^{(k-1)}+t\,P_{i+1}^{(k-1)}$ cho đến khi còn một điểm $P_0^{(n)}=B(t)$. \textbf{Ổn định số} (chỉ tổ hợp lồi), làm việc ở mọi chiều, và "miễn phí" cho ra control point của \textbf{subdivision}. Chi phí $O(n^2)$ phép nhân — quá đủ với $n=3$.
+
+\switchcolumn*
+
+\textbf{Q18. Write the De Casteljau recursion.}\\
+For $k=1,\ldots,n$ and $i=0,\ldots,n-k$:
+\[ P_i^{(k)}(t) = (1-t)\, P_i^{(k-1)}(t) + t\, P_{i+1}^{(k-1)}(t), \quad P_i^{(0)}=P_i. \]
+The Bezier value is $B(t)=P_0^{(n)}(t)$. Geometrically each step replaces the current control polygon by the polygon of midpoint-weighted interpolations, shrinking the polygon one vertex at a time. After $n$ steps, the polygon collapses to a single point — the curve point at $t$.
+
+\switchcolumn
+
+\textbf{Câu 18. Viết đệ quy De Casteljau.}\\
+Với $k=1,\ldots,n$ và $i=0,\ldots,n-k$:
+\[ P_i^{(k)}(t) = (1-t)\, P_i^{(k-1)}(t) + t\, P_{i+1}^{(k-1)}(t), \quad P_i^{(0)}=P_i. \]
+Giá trị curve là $B(t)=P_0^{(n)}(t)$. Hình học: mỗi bước thay polygon hiện tại bằng polygon các điểm nội suy trung gian, mỗi lần "co" đi một đỉnh. Sau $n$ bước, polygon co về một điểm — chính là điểm trên curve tại $t$.
+
+\switchcolumn*
+
+\textbf{Q19. De Casteljau vs direct Bernstein evaluation?}\\
+\textbf{Direct Bernstein}: compute each $B_{i,n}(t)$ via the explicit formula and dot with $P_i$. Cost: $O(n)$ multiplications per evaluation if Bernsteins are precomputed, but it suffers \textbf{cancellation} when $(1-t)^k$ and $t^k$ are large/small. \textbf{De Casteljau}: $O(n^2)$ but uses only convex combinations — \textbf{no cancellation}, monotone error growth, plus you get subdivision data for free. Use direct evaluation when $n$ is large and precision is fine; use De Casteljau for robustness, subdivision, splitting, and intersection.
+
+\switchcolumn
+
+\textbf{Câu 19. So sánh De Casteljau với Bernstein trực tiếp?}\\
+\textbf{Bernstein trực tiếp}: tính từng $B_{i,n}(t)$ rồi dot với $P_i$. Chi phí $O(n)$ phép nhân nếu Bernsteins precomputed, nhưng \textbf{cancellation} khi $(1-t)^k$ và $t^k$ chênh lệch lớn. \textbf{De Casteljau}: $O(n^2)$ nhưng chỉ dùng tổ hợp lồi — \textbf{không cancellation}, sai số tăng đều, và miễn phí subdivision. Dùng trực tiếp khi $n$ lớn và precision đủ; dùng De Casteljau khi cần robustness, subdivision, splitting, intersection.
+
+\switchcolumn*
+
+\textbf{Q20. Why is De Casteljau numerically stable?}\\
+Each step is a \textbf{convex combination} $(1-t)A + tB$ with $t\in[0,1]$, so the result lies between $A$ and $B$. No subtraction of nearly-equal numbers, no large $t^k$ or $(1-t)^k$ cancellations. The intermediate points stay within the convex hull of the original control points, so floating-point error is \textbf{bounded by} the spread of those points and grows linearly. By contrast, Bernstein direct evaluation expands $(1-t)^k t^{n-k}$ which can over/underflow and cancel for $t$ near $0$ or $1$.
+
+\switchcolumn
+
+\textbf{Câu 20. Vì sao De Casteljau ổn định số?}\\
+Mỗi bước là \textbf{tổ hợp lồi} $(1-t)A + tB$ với $t\in[0,1]$, kết quả nằm giữa $A$ và $B$. Không có phép trừ giữa hai số gần bằng, không cancellation lớn của $t^k$ hay $(1-t)^k$. Điểm trung gian luôn ở trong convex hull của control point gốc, sai số floating-point \textbf{bị chặn} bởi đường kính cụm điểm và tăng tuyến tính. Ngược lại, Bernstein trực tiếp khai triển $(1-t)^k t^{n-k}$ dễ over/underflow và cancellation khi $t$ gần $0$ hoặc $1$.
+
+\switchcolumn*
+
+\textbf{Q21. How does De Casteljau give subdivision for free?}\\
+After running De Casteljau at parameter $t^*$, the \textbf{left edge} of the triangle ($P_0^{(0)}, P_0^{(1)}, \ldots, P_0^{(n)}$) gives the control points of the curve restricted to $[0, t^*]$, and the \textbf{right edge} ($P_0^{(n)}, P_1^{(n-1)}, \ldots, P_n^{(0)}$) gives the control points for $[t^*, 1]$. Both halves are themselves Bezier curves of the same degree. This split is the basis of \textbf{adaptive rendering}, \textbf{intersection}, and \textbf{trimming} algorithms — recurse until each piece is "flat enough", then draw line segments.
+
+\switchcolumn
+
+\textbf{Câu 21. Subdivision miễn phí từ De Casteljau?}\\
+Sau khi chạy De Casteljau tại $t^*$, \textbf{cạnh trái} của tam giác ($P_0^{(0)}, P_0^{(1)}, \ldots, P_0^{(n)}$) là control point của curve trên $[0, t^*]$, và \textbf{cạnh phải} ($P_0^{(n)}, P_1^{(n-1)}, \ldots, P_n^{(0)}$) là control point trên $[t^*, 1]$. Cả hai nửa đều là Bezier cùng bậc. Đây là cơ sở của \textbf{adaptive rendering}, \textbf{intersection}, \textbf{trimming} — đệ quy cho đến khi đủ "phẳng" thì vẽ line segment.
+
+\switchcolumn*
+
+\textbf{Q22. Geometric interpretation of De Casteljau?}\\
+Imagine the control polygon as a sequence of segments. At parameter $t$, place a point at fraction $t$ along each segment $\overline{P_iP_{i+1}}$ — these are the level-1 points. Connect them to form a new polygon with one fewer vertex, and repeat. Each recursion is a \textbf{shrinking polygon}; after $n$ recursions only one point remains, the curve point at $t$. The construction is purely \textbf{linear interpolation} — pencil-and-ruler-friendly, no algebra needed.
+
+\switchcolumn
+
+\textbf{Câu 22. Diễn giải hình học De Casteljau?}\\
+Hình dung control polygon là chuỗi đoạn thẳng. Tại tham số $t$, đặt một điểm ở vị trí tỉ lệ $t$ trên mỗi đoạn $\overline{P_iP_{i+1}}$ — đó là level-1. Nối chúng tạo polygon mới ít hơn một đỉnh, lặp lại. Mỗi đệ quy là \textbf{polygon co lại}; sau $n$ đệ quy còn một điểm — chính là điểm trên curve tại $t$. Toàn bộ chỉ là \textbf{nội suy tuyến tính} — vẽ tay bằng compass thước được, không cần đại số.
+
+\switchcolumn*
+
+\textbf{Q23. Worked: $P_0=(0,0), P_1=(1,3), P_2=(3,3), P_3=(4,0)$, compute $B(0.5)$ via De Casteljau.}\\
+With $t=0.5$, $1-t=0.5$.
+\textbf{Level 1}:\;
+$P_0^{(1)}=0.5(0,0)+0.5(1,3)=(0.5, 1.5)$;\;
+$P_1^{(1)}=0.5(1,3)+0.5(3,3)=(2, 3)$;\;
+$P_2^{(1)}=0.5(3,3)+0.5(4,0)=(3.5, 1.5)$.
+\textbf{Level 2}:\;
+$P_0^{(2)}=0.5(0.5,1.5)+0.5(2,3)=(1.25, 2.25)$;\;
+$P_1^{(2)}=0.5(2,3)+0.5(3.5,1.5)=(2.75, 2.25)$.
+\textbf{Level 3}:\;
+$B(0.5)=P_0^{(3)}=0.5(1.25,2.25)+0.5(2.75,2.25)=(2, 2.25)$.
+
+\switchcolumn
+
+\textbf{Câu 23. Bài tập: $P_0=(0,0), P_1=(1,3), P_2=(3,3), P_3=(4,0)$, tính $B(0.5)$ bằng De Casteljau.}\\
+Với $t=0.5$, $1-t=0.5$.
+\textbf{Level 1}:\;
+$P_0^{(1)}=0.5(0,0)+0.5(1,3)=(0.5, 1.5)$;\;
+$P_1^{(1)}=0.5(1,3)+0.5(3,3)=(2, 3)$;\;
+$P_2^{(1)}=0.5(3,3)+0.5(4,0)=(3.5, 1.5)$.
+\textbf{Level 2}:\;
+$P_0^{(2)}=0.5(0.5,1.5)+0.5(2,3)=(1.25, 2.25)$;\;
+$P_1^{(2)}=0.5(2,3)+0.5(3.5,1.5)=(2.75, 2.25)$.
+\textbf{Level 3}:\;
+$B(0.5)=P_0^{(3)}=0.5(1.25,2.25)+0.5(2.75,2.25)=(2, 2.25)$.
+
+\switchcolumn*
+
+\textbf{Q24. Same setup, compute $B(0.75)$ via De Casteljau.}\\
+With $t=0.75$, $1-t=0.25$.
+\textbf{Level 1}:\;
+$P_0^{(1)}=0.25(0,0)+0.75(1,3)=(0.75, 2.25)$;\;
+$P_1^{(1)}=0.25(1,3)+0.75(3,3)=(2.5, 3)$;\;
+$P_2^{(1)}=0.25(3,3)+0.75(4,0)=(3.75, 0.75)$.
+\textbf{Level 2}:\;
+$P_0^{(2)}=0.25(0.75,2.25)+0.75(2.5,3)=(2.0625, 2.8125)$;\;
+$P_1^{(2)}=0.25(2.5,3)+0.75(3.75,0.75)=(3.4375, 1.3125)$.
+\textbf{Level 3}:\;
+$B(0.75)=0.25(2.0625,2.8125)+0.75(3.4375,1.3125)=(3.0625, 1.6875)$.
+
+\switchcolumn
+
+\textbf{Câu 24. Cùng setup, tính $B(0.75)$ bằng De Casteljau.}\\
+Với $t=0.75$, $1-t=0.25$.
+\textbf{Level 1}:\;
+$P_0^{(1)}=0.25(0,0)+0.75(1,3)=(0.75, 2.25)$;\;
+$P_1^{(1)}=0.25(1,3)+0.75(3,3)=(2.5, 3)$;\;
+$P_2^{(1)}=0.25(3,3)+0.75(4,0)=(3.75, 0.75)$.
+\textbf{Level 2}:\;
+$P_0^{(2)}=0.25(0.75,2.25)+0.75(2.5,3)=(2.0625, 2.8125)$;\;
+$P_1^{(2)}=0.25(2.5,3)+0.75(3.75,0.75)=(3.4375, 1.3125)$.
+\textbf{Level 3}:\;
+$B(0.75)=0.25(2.0625,2.8125)+0.75(3.4375,1.3125)=(3.0625, 1.6875)$.
+
+\switchcolumn*
+
+\textbf{Q25. Same setup, compute $B(0.5)$ via direct Bernstein. Verify.}\\
+Cubic Bernsteins at $t=0.5$: $B_{0,3}=0.125$, $B_{1,3}=3(0.25)(0.5)=0.375$, $B_{2,3}=3(0.5)(0.25)=0.375$, $B_{3,3}=0.125$.
+$B(0.5)=0.125(0,0)+0.375(1,3)+0.375(3,3)+0.125(4,0)$.
+$x = 0 + 0.375 + 1.125 + 0.5 = 2$.
+$y = 0 + 1.125 + 1.125 + 0 = 2.25$.
+So $B(0.5)=(2, 2.25)$ — \textbf{matches} the De Casteljau result of Q23.
+
+\switchcolumn
+
+\textbf{Câu 25. Cùng setup, tính $B(0.5)$ trực tiếp bằng Bernstein. Kiểm tra.}\\
+Bernstein bậc 3 tại $t=0.5$: $B_{0,3}=0.125$, $B_{1,3}=3(0.25)(0.5)=0.375$, $B_{2,3}=3(0.5)(0.25)=0.375$, $B_{3,3}=0.125$.
+$B(0.5)=0.125(0,0)+0.375(1,3)+0.375(3,3)+0.125(4,0)$.
+$x = 0 + 0.375 + 1.125 + 0.5 = 2$.
+$y = 0 + 1.125 + 1.125 + 0 = 2.25$.
+Vậy $B(0.5)=(2, 2.25)$ — \textbf{khớp} với De Casteljau ở Câu 23.
+
+\switchcolumn*
+
+\textbf{Q26. Tangents at $t=0$ and $t=1$ for the same curve.}\\
+Using $B'(0)=n(P_1-P_0)$ and $B'(1)=n(P_n-P_{n-1})$ with $n=3$:
+$B'(0)=3((1,3)-(0,0))=(3, 9)$. Direction: $(1,3)$, slope $3$.
+$B'(1)=3((4,0)-(3,3))=(3, -9)$. Direction: $(1,-3)$, slope $-3$.
+So the curve leaves $(0,0)$ steeply upward along direction $(1,3)$ and arrives at $(4,0)$ steeply downward along $(1,-3)$ — symmetric about the vertical $x=2$, as expected from the symmetric control polygon.
+
+\switchcolumn
+
+\textbf{Câu 26. Tiếp tuyến tại $t=0$ và $t=1$ của cùng curve.}\\
+Dùng $B'(0)=n(P_1-P_0)$ và $B'(1)=n(P_n-P_{n-1})$ với $n=3$:
+$B'(0)=3((1,3)-(0,0))=(3, 9)$. Hướng $(1,3)$, slope $3$.
+$B'(1)=3((4,0)-(3,3))=(3, -9)$. Hướng $(1,-3)$, slope $-3$.
+Curve rời $(0,0)$ đi lên dốc theo hướng $(1,3)$, đến $(4,0)$ đi xuống theo $(1,-3)$ — đối xứng qua đường $x=2$, đúng như control polygon đối xứng.
+
+\switchcolumn*
+
+\textbf{Q27. Subdivide the cubic at $t=0.5$ — left and right control polygons.}\\
+From the De Casteljau triangle at $t=0.5$ (Q23):
+\textbf{Left polygon} (curve on $[0, 0.5]$): $P_0^{(0)}=(0,0)$, $P_0^{(1)}=(0.5,1.5)$, $P_0^{(2)}=(1.25,2.25)$, $P_0^{(3)}=(2,2.25)$.
+\textbf{Right polygon} (curve on $[0.5, 1]$): $P_0^{(3)}=(2,2.25)$, $P_1^{(2)}=(2.75,2.25)$, $P_2^{(1)}=(3.5,1.5)$, $P_3^{(0)}=(4,0)$.
+The two halves share the midpoint $B(0.5)=(2, 2.25)$ as a common endpoint and form a $C^1$ join (the original curve is smooth, after all).
+
+\switchcolumn
+
+\textbf{Câu 27. Chia đôi cubic tại $t=0.5$ — control polygon trái và phải.}\\
+Từ tam giác De Casteljau tại $t=0.5$ (Câu 23):
+\textbf{Polygon trái} (curve trên $[0, 0.5]$): $P_0^{(0)}=(0,0)$, $P_0^{(1)}=(0.5,1.5)$, $P_0^{(2)}=(1.25,2.25)$, $P_0^{(3)}=(2,2.25)$.
+\textbf{Polygon phải} (curve trên $[0.5, 1]$): $P_0^{(3)}=(2,2.25)$, $P_1^{(2)}=(2.75,2.25)$, $P_2^{(1)}=(3.5,1.5)$, $P_3^{(0)}=(4,0)$.
+Hai nửa chia sẻ midpoint $B(0.5)=(2, 2.25)$ làm endpoint chung, ghép $C^1$ (curve gốc vốn smooth).
+
+\switchcolumn*
+
+\textbf{Q28. Why is a Bezier surface called tensor product?}\\
+The basis of the surface space is the \textbf{outer product} of two univariate Bernstein bases:
+\[ \{B_{i,m}(u) B_{j,n}(v)\}_{i,j}. \]
+Algebraically this is the \textbf{tensor product} of the two basis sets. Geometrically, fixing $v$ leaves a Bezier curve in $u$, and fixing $u$ leaves a Bezier curve in $v$ — the surface is "woven" from two families of orthogonal Bezier curves. Tensor-product structure is what allows \textbf{separable evaluation} and clean mathematical analysis.
+
+\switchcolumn
+
+\textbf{Câu 28. Vì sao Bezier surface gọi là tensor product?}\\
+Cơ sở không gian surface là \textbf{outer product} của hai Bernstein basis 1 chiều:
+\[ \{B_{i,m}(u) B_{j,n}(v)\}_{i,j}. \]
+Đại số đây chính là \textbf{tensor product} hai tập cơ sở. Hình học, cố định $v$ còn lại Bezier curve theo $u$, cố định $u$ còn lại Bezier curve theo $v$ — surface "dệt" từ hai họ Bezier curve trực giao. Cấu trúc tensor product cho phép \textbf{separable evaluation} và phân tích toán học sạch sẽ.
+
+\switchcolumn*
+
+\textbf{Q29. Row-first vs column-first surface evaluation?}\\
+\textbf{Row-first}: for each row $i$, evaluate the Bezier curve in $v$ with control points $\{P_{i,j}\}_{j=0..n}$ to get $Q_i(v)$. Then evaluate a Bezier curve in $u$ on $\{Q_0,\ldots,Q_m\}$ to get $S(u,v)$. \textbf{Column-first}: swap roles of $u$ and $v$. Both give the same point — tensor products commute. Choice depends on caching / SIMD layout. For a \textbf{bicubic}, total cost is $4+1=5$ De Casteljau passes either way: 4 row passes (cost $O(n^2)$ each) plus 1 final pass.
+
+\switchcolumn
+
+\textbf{Câu 29. Đánh giá surface theo hàng trước hay cột trước?}\\
+\textbf{Row-first}: với mỗi hàng $i$, tính Bezier curve theo $v$ với control point $\{P_{i,j}\}_{j}$ để có $Q_i(v)$. Rồi tính Bezier curve theo $u$ trên $\{Q_0,\ldots,Q_m\}$ ra $S(u,v)$. \textbf{Column-first}: đổi vai trò $u, v$. Cùng kết quả — tensor product giao hoán. Chọn tuỳ cache / SIMD layout. Với \textbf{bicubic}, tổng cộng $4+1=5$ pass De Casteljau: 4 row pass (mỗi pass $O(n^2)$) + 1 pass cuối.
+
+\switchcolumn*
+
+\textbf{Q30. De Casteljau on a Bezier surface — step by step.}\\
+Goal: evaluate $S(u^*, v^*)$ on a $4\times 4$ bicubic patch.
+\textbf{Step 1}: For each row $i=0,1,2,3$ run De Casteljau with $t=v^*$ on the 4 control points $\{P_{i,0},P_{i,1},P_{i,2},P_{i,3}\}$ to obtain $Q_i = $ row $i$ Bezier curve at $v^*$.
+\textbf{Step 2}: Run De Casteljau with $t=u^*$ on the 4 derived points $\{Q_0, Q_1, Q_2, Q_3\}$.
+\textbf{Step 3}: The final point is $S(u^*, v^*)$. Total: 5 univariate De Casteljau evaluations of degree 3.
+
+\switchcolumn
+
+\textbf{Câu 30. De Casteljau cho Bezier surface — từng bước.}\\
+Mục tiêu: tính $S(u^*, v^*)$ trên bicubic $4\times 4$.
+\textbf{Bước 1}: Với mỗi hàng $i=0,1,2,3$ chạy De Casteljau với $t=v^*$ trên 4 control point $\{P_{i,0},\ldots,P_{i,3}\}$ ra $Q_i = $ Bezier curve hàng $i$ tại $v^*$.
+\textbf{Bước 2}: Chạy De Casteljau với $t=u^*$ trên 4 điểm $\{Q_0, Q_1, Q_2, Q_3\}$.
+\textbf{Bước 3}: Kết quả cuối là $S(u^*, v^*)$. Tổng: 5 lần De Casteljau 1 chiều bậc 3.
+
+\switchcolumn*
+
+\textbf{Q31. What is a bicubic Bezier patch? How many control points?}\\
+A \textbf{bicubic Bezier patch} has degree $(3,3)$. It uses $(3{+}1)\times(3{+}1)=\mathbf{16}$ control points $\{P_{i,j}\}_{0\le i,j\le 3}$. The four corners $P_{0,0}, P_{0,3}, P_{3,0}, P_{3,3}$ lie on the surface; the four boundary curves are cubic Beziers. Bicubic is the \textbf{minimum} degree allowing $C^1$ joins between patches with shape control on both the corner positions and the corner tangents — that is why CAD systems standardise on bicubic patches.
+
+\switchcolumn
+
+\textbf{Câu 31. Bicubic Bezier patch là gì? Bao nhiêu control point?}\\
+\textbf{Bicubic Bezier patch} có bậc $(3,3)$. Dùng $(3{+}1)\times(3{+}1)=\mathbf{16}$ control point $\{P_{i,j}\}_{0\le i,j\le 3}$. Bốn góc $P_{0,0}, P_{0,3}, P_{3,0}, P_{3,3}$ nằm trên surface; bốn boundary curve là Bezier bậc 3. Bicubic là bậc \textbf{tối thiểu} cho phép ghép $C^1$ giữa các patch và kiểm soát cả vị trí lẫn tangent ở góc — vì vậy CAD chuẩn hoá bicubic.
+
+\switchcolumn*
+
+\textbf{Q32. What are isoparametric curves?}\\
+An \textbf{isoparametric curve} (iso-curve) is a curve on a Bezier surface obtained by \textbf{fixing one parameter}: $u=u_0$ (a $v$-iso) or $v=v_0$ (a $u$-iso). Each iso-curve is itself a Bezier curve of degree $m$ or $n$, with control points obtained by running univariate De Casteljau on the rows or columns of the control net at the fixed parameter. Iso-curves are used for \textbf{wireframe rendering}, \textbf{contour previews}, and as \textbf{trim curves}.
+
+\switchcolumn
+
+\textbf{Câu 32. Isoparametric curve là gì?}\\
+\textbf{Isoparametric curve} (iso-curve) là curve trên Bezier surface khi \textbf{cố định một tham số}: $u=u_0$ ($v$-iso) hoặc $v=v_0$ ($u$-iso). Mỗi iso-curve là Bezier curve bậc $m$ hoặc $n$, với control point lấy từ De Casteljau 1 chiều trên hàng/cột của control net tại tham số cố định. Dùng cho \textbf{wireframe render}, \textbf{contour preview}, và \textbf{trim curve}.
+
+\switchcolumn*
+
+\textbf{Q33. Bezier vs B-spline vs NURBS — when to use which?}\\
+\textbf{Bezier}: simple, single-segment polynomial; degree tied to number of control points; no local control; great for fonts, simple animation.
+\textbf{B-spline}: piecewise polynomial with a knot vector; \textbf{local control} (move one control point, only nearby segments change); decoupled degree and segment count; best for editable smooth curves.
+\textbf{NURBS} (Non-Uniform Rational B-Spline): B-spline + per-control-point weights, written in homogeneous coords; can represent \textbf{conics exactly} (circles, ellipses, paraboloids); industry standard for CAD/CAM.
+Use Bezier for art assets, B-spline for editable shapes, NURBS for engineering.
+
+\switchcolumn
+
+\textbf{Câu 33. Bezier vs B-spline vs NURBS — khi nào dùng?}\\
+\textbf{Bezier}: 1 segment đa thức đơn giản; bậc gắn liền số control point; không local control; tốt cho font, animation đơn giản.
+\textbf{B-spline}: piecewise polynomial với knot vector; \textbf{local control} (kéo 1 control point chỉ đổi vài segment quanh); bậc và số segment độc lập; tốt cho curve smooth chỉnh sửa được.
+\textbf{NURBS}: B-spline + weight cho từng control point, viết homogeneous; biểu diễn \textbf{conic chính xác} (đường tròn, ellipse, paraboloid); chuẩn công nghiệp CAD/CAM.
+Dùng Bezier cho asset nghệ thuật, B-spline cho hình chỉnh sửa, NURBS cho kỹ thuật.
+
+\switchcolumn*
+
+\textbf{Q34. Hermite curve — compare with Bezier.}\\
+A \textbf{cubic Hermite curve} is defined by two endpoints $P_0, P_1$ and two endpoint tangents $T_0, T_1$:
+\[ H(t) = h_{00}P_0 + h_{10}T_0 + h_{01}P_1 + h_{11}T_1, \]
+with the standard Hermite blending functions. A cubic Hermite is \textbf{equivalent} to a cubic Bezier with control points $P_0, P_0+\tfrac{1}{3}T_0, P_1-\tfrac{1}{3}T_1, P_1$. Hermite is more natural when the user supplies tangents directly (e.g.\ animation keyframes); Bezier is more natural when the user supplies handles. They are two parameterisations of the same cubic family.
+
+\switchcolumn
+
+\textbf{Câu 34. Hermite curve — so sánh Bezier.}\\
+\textbf{Hermite curve} bậc 3 định nghĩa bởi 2 điểm $P_0, P_1$ và 2 tangent $T_0, T_1$:
+\[ H(t) = h_{00}P_0 + h_{10}T_0 + h_{01}P_1 + h_{11}T_1, \]
+với các Hermite blending function chuẩn. Cubic Hermite \textbf{tương đương} cubic Bezier với control point $P_0, P_0+\tfrac{1}{3}T_0, P_1-\tfrac{1}{3}T_1, P_1$. Hermite tự nhiên khi người dùng cho tangent trực tiếp (animation keyframe); Bezier tự nhiên khi cho handle. Hai cách parameterise cùng một họ cubic.
+
+\switchcolumn*
+
+\textbf{Q35. Catmull-Rom spline — when preferred?}\\
+A \textbf{Catmull-Rom} spline is a $C^1$ cubic spline that \textbf{interpolates} every given knot point and computes tangents from neighbours: $T_i = \tfrac{1}{2}(P_{i+1}-P_{i-1})$. Preferred when you have a sequence of \textbf{must-pass-through} points (camera paths, animation keyframes, road centrelines) and don't want to fiddle with handles. Downside: not local in shape if you change one point — it perturbs four segments — and lacks the convex hull property, so it can overshoot.
+
+\switchcolumn
+
+\textbf{Câu 35. Catmull-Rom — khi nào dùng?}\\
+\textbf{Catmull-Rom} là cubic spline $C^1$ \textbf{nội suy} mọi knot point và tính tangent từ hàng xóm: $T_i = \tfrac{1}{2}(P_{i+1}-P_{i-1})$. Dùng khi có chuỗi điểm \textbf{bắt buộc phải đi qua} (camera path, animation keyframe, tim đường) và không muốn loay hoay với handle. Nhược: đổi một điểm sẽ ảnh hưởng 4 segment, không có convex hull nên có thể overshoot.
+
+\switchcolumn*
+
+\textbf{Q36. NURBS surface — why CAD industry standard?}\\
+\textbf{NURBS} = Non-Uniform Rational B-Spline. Each control point has a weight $w_{i,j}$, and the surface is
+\[ S(u,v) = \frac{\sum_{i,j} N_{i,p}(u) N_{j,q}(v) w_{i,j} P_{i,j}}{\sum_{i,j} N_{i,p}(u) N_{j,q}(v) w_{i,j}}. \]
+Why standard: (i) exact representation of \textbf{conics, quadrics, tori} — needed for mechanical parts; (ii) local control via knot vectors; (iii) affine + projective invariance; (iv) supported by every major CAD kernel (Parasolid, ACIS, OpenCASCADE) and exchange format (STEP, IGES).
+
+\switchcolumn
+
+\textbf{Câu 36. NURBS surface — vì sao chuẩn CAD?}\\
+\textbf{NURBS} = Non-Uniform Rational B-Spline. Mỗi control point có weight $w_{i,j}$:
+\[ S(u,v) = \frac{\sum_{i,j} N_{i,p}(u) N_{j,q}(v) w_{i,j} P_{i,j}}{\sum_{i,j} N_{i,p}(u) N_{j,q}(v) w_{i,j}}. \]
+Lý do: (i) biểu diễn \textbf{conic, quadric, torus} chính xác — cần cho cơ khí; (ii) local control qua knot vector; (iii) bất biến affine + projective; (iv) mọi CAD kernel lớn (Parasolid, ACIS, OpenCASCADE) và format trao đổi (STEP, IGES) hỗ trợ.
+
+\switchcolumn*
+
+\textbf{Q37. Degree elevation — formula and uses.}\\
+\textbf{Degree elevation}: convert a Bezier of degree $n$ with controls $\{P_i\}$ into the \textbf{same curve} represented as a Bezier of degree $n+1$ with controls $\{P_i^*\}$:
+\[ P_i^* = \tfrac{i}{n+1} P_{i-1} + \left(1-\tfrac{i}{n+1}\right) P_i, \quad i=0,\ldots,n+1, \]
+with $P_{-1}, P_{n+1}$ ignored. Used to: (i) merge curves of different degrees into a common degree before joining/blending; (ii) give designers more control points without changing the shape; (iii) prepare data for algorithms (e.g.\ Bezier-Clip intersection) that need matched degrees.
+
+\switchcolumn
+
+\textbf{Câu 37. Degree elevation — công thức và mục đích.}\\
+\textbf{Degree elevation}: chuyển Bezier bậc $n$ với control $\{P_i\}$ thành \textbf{cùng curve} ở bậc $n+1$ với control $\{P_i^*\}$:
+\[ P_i^* = \tfrac{i}{n+1} P_{i-1} + \left(1-\tfrac{i}{n+1}\right) P_i, \quad i=0,\ldots,n+1, \]
+với $P_{-1}, P_{n+1}$ bỏ qua. Dùng để: (i) gộp curve khác bậc về cùng bậc trước khi nối/blend; (ii) cho designer thêm control point mà không đổi hình; (iii) chuẩn bị dữ liệu cho thuật toán (ví dụ Bezier-Clip) cần cùng bậc.
+
+\switchcolumn*
+
+\textbf{Q38. Derivative of a Bezier curve?}\\
+The derivative of a degree-$n$ Bezier is a degree-$(n-1)$ Bezier with control points $D_i = n(P_{i+1}-P_i)$:
+\[ B'(t) = \sum_{i=0}^{n-1} B_{i,n-1}(t)\, n(P_{i+1}-P_i). \]
+This is called the \textbf{hodograph}. Used for: (i) tangent vectors at any $t$ (just evaluate the hodograph at $t$); (ii) curvature analysis $\kappa = \tfrac{|B'\times B''|}{|B'|^3}$; (iii) checking inflection points; (iv) arc-length parametrisation via $\int |B'(t)|\,dt$.
+
+\switchcolumn
+
+\textbf{Câu 38. Đạo hàm của Bezier curve?}\\
+Đạo hàm Bezier bậc $n$ là Bezier bậc $n-1$ với control point $D_i = n(P_{i+1}-P_i)$:
+\[ B'(t) = \sum_{i=0}^{n-1} B_{i,n-1}(t)\, n(P_{i+1}-P_i). \]
+Gọi là \textbf{hodograph}. Dùng cho: (i) tangent tại mọi $t$ (chỉ cần đánh giá hodograph tại $t$); (ii) curvature $\kappa = \tfrac{|B'\times B''|}{|B'|^3}$; (iii) kiểm tra điểm uốn; (iv) arc-length parametrisation qua $\int |B'(t)|\,dt$.
+
+\switchcolumn*
+
+\textbf{Q39. $C^0$, $C^1$, $C^2$ continuity — how to enforce?}\\
+Two Bezier segments $B_1$ (controls $P_0,\ldots,P_n$) and $B_2$ (controls $Q_0,\ldots,Q_m$) joined at $B_1(1)=B_2(0)$:
+\textbf{$C^0$}: positions match $\Rightarrow Q_0=P_n$.
+\textbf{$C^1$}: tangents match $\Rightarrow$ for equal degrees $n=m$, $Q_1-Q_0 = P_n-P_{n-1}$, i.e.\ $P_{n-1}, P_n=Q_0, Q_1$ are collinear and equally spaced.
+\textbf{$C^2$}: in addition, the second derivatives match — adds a constraint on $P_{n-2}, P_{n-1}, Q_0, Q_1, Q_2$ involving combinations of consecutive differences.
+
+\switchcolumn
+
+\textbf{Câu 39. Liên tục $C^0$, $C^1$, $C^2$ — cách enforce?}\\
+Hai Bezier $B_1$ (control $P_0,\ldots,P_n$) và $B_2$ (control $Q_0,\ldots,Q_m$) nối tại $B_1(1)=B_2(0)$:
+\textbf{$C^0$}: vị trí $\Rightarrow Q_0=P_n$.
+\textbf{$C^1$}: tangent $\Rightarrow$ với cùng bậc $n=m$, $Q_1-Q_0 = P_n-P_{n-1}$, tức $P_{n-1}, P_n=Q_0, Q_1$ thẳng hàng và cách đều.
+\textbf{$C^2$}: thêm đạo hàm bậc 2 khớp — ràng buộc thêm trên $P_{n-2}, P_{n-1}, Q_0, Q_1, Q_2$ qua tổ hợp các sai phân liên tiếp.
+
+\switchcolumn*
+
+\textbf{Q40. Joining two cubic Beziers with $G^1$ continuity?}\\
+\textbf{$G^1$ (geometric)} requires only that tangent \textbf{directions} match at the join, not magnitudes. For cubics: $Q_0=P_3$ and $Q_1-Q_0 = \alpha (P_3-P_2)$ for some scalar $\alpha > 0$. So $P_2, P_3=Q_0, Q_1$ are collinear and on the same side, but the spacing can differ. This is a \textbf{weaker} but more flexible condition than $C^1$; commonly used in font design where shape continuity matters but the parameter speed is irrelevant.
+
+\switchcolumn
+
+\textbf{Câu 40. Nối hai cubic Bezier với $G^1$?}\\
+\textbf{$G^1$ (geometric)} chỉ yêu cầu \textbf{hướng} tangent khớp, không cần độ lớn. Với cubic: $Q_0=P_3$ và $Q_1-Q_0 = \alpha (P_3-P_2)$ với $\alpha > 0$. Tức $P_2, P_3=Q_0, Q_1$ thẳng hàng, cùng phía, nhưng khoảng cách có thể khác. Là điều kiện \textbf{yếu} hơn nhưng linh hoạt hơn $C^1$; phổ biến trong thiết kế font, nơi cần hình mượt nhưng tốc độ tham số không quan trọng.
+
+\switchcolumn*
+
+\textbf{Q41. Bezier curves in font design / typography?}\\
+Modern fonts (PostScript Type 1, TrueType, OpenType, SVG) store glyph outlines as sequences of \textbf{Bezier segments}. PostScript and OpenType-CFF use \textbf{cubic} Beziers; TrueType uses \textbf{quadratic} Beziers (cheaper to evaluate on early rasterisers). Each glyph is a closed contour stitched from many short Bezier pieces with $C^0$ or $G^1$ continuity at junctions, plus a fill rule (even-odd or non-zero). Resolution-independence and editability via control points are why Beziers won the typography war.
+
+\switchcolumn
+
+\textbf{Câu 41. Bezier trong thiết kế font / typography?}\\
+Font hiện đại (PostScript Type 1, TrueType, OpenType, SVG) lưu đường viền glyph dạng chuỗi \textbf{Bezier segment}. PostScript và OpenType-CFF dùng \textbf{cubic} Bezier; TrueType dùng \textbf{quadratic} Bezier (rasterise rẻ hơn trên máy đời cũ). Mỗi glyph là contour kín ghép từ nhiều Bezier ngắn với $C^0$ hoặc $G^1$ tại nối, kèm fill rule (even-odd hoặc non-zero). Resolution-independence và editability qua control point khiến Bezier thắng trận typography.
+
+\switchcolumn*
+
+\textbf{Q42. Bezier curves in vector graphics (SVG, Illustrator)?}\\
+SVG path commands \texttt{C} (cubic) and \texttt{Q} (quadratic) directly draw Bezier segments; the \texttt{T}/\texttt{S} variants give shorthand smooth joins. Adobe Illustrator's pen tool exposes the four control points of each cubic Bezier as the anchor point and two handles. Operations like \textbf{stroking}, \textbf{offset curves}, and \textbf{boolean ops} are implemented by adaptively subdividing Beziers (often with De Casteljau) until each piece is "flat enough" to treat as a line segment — then standard polygon algorithms apply.
+
+\switchcolumn
+
+\textbf{Câu 42. Bezier trong vector graphics (SVG, Illustrator)?}\\
+Lệnh path SVG \texttt{C} (cubic) và \texttt{Q} (quadratic) vẽ trực tiếp Bezier; \texttt{T}/\texttt{S} là shorthand smooth. Pen tool của Illustrator hiển thị 4 control point cubic Bezier dưới dạng anchor + 2 handle. Các phép \textbf{stroke}, \textbf{offset curve}, \textbf{boolean op} được hiện thực bằng adaptive subdivision (thường De Casteljau) cho đến khi mỗi mảnh đủ "phẳng" để coi như line — rồi áp thuật toán polygon chuẩn.
+
+\switchcolumn*
+
+\textbf{Q43. Bezier surfaces in CAD?}\\
+Early CAD systems (Bezier at Renault, Coons at MIT) used Bezier patches to model car body panels and aircraft skins — areas where smooth, free-form, mathematically tractable surfaces were essential. Modern CAD has migrated to \textbf{NURBS} (which is a Bezier-superset), but Bezier patches remain the building block: every NURBS surface can be \textbf{converted} into a network of Bezier patches via knot insertion, and downstream algorithms (rendering, intersection, meshing) often work on the Bezier representation.
+
+\switchcolumn
+
+\textbf{Câu 43. Bezier surface trong CAD?}\\
+CAD đời đầu (Bezier ở Renault, Coons ở MIT) dùng Bezier patch để mô hình thân xe, vỏ máy bay — những vùng cần surface free-form mượt, dễ xử lý toán học. CAD hiện đại đã chuyển sang \textbf{NURBS} (siêu tập Bezier), nhưng Bezier patch vẫn là khối xây: mọi NURBS surface có thể \textbf{convert} thành lưới Bezier patch qua knot insertion, và thuật toán downstream (render, intersection, meshing) thường làm việc trên dạng Bezier.
+
+\switchcolumn*
+
+\textbf{Q44. Bezier in animation (keyframe interpolation)?}\\
+Animation timing curves (the "f-curves" in Maya, Blender, After Effects) are typically cubic Beziers from one keyframe value to the next. The two endpoint control points are the keyframe values; the two interior handles control \textbf{ease-in / ease-out}. The CSS3 \texttt{cubic-bezier(x1,y1,x2,y2)} function is exactly this: a cubic Bezier with $P_0=(0,0)$, $P_1=(x_1,y_1)$, $P_2=(x_2,y_2)$, $P_3=(1,1)$ that maps animation time $\to$ progress.
+
+\switchcolumn
+
+\textbf{Câu 44. Bezier trong animation (keyframe)?}\\
+Đường timing animation (f-curve trong Maya, Blender, After Effects) thường là cubic Bezier giữa 2 keyframe. Hai control point đầu là giá trị keyframe; hai handle giữa điều khiển \textbf{ease-in / ease-out}. Hàm CSS3 \texttt{cubic-bezier(x1,y1,x2,y2)} chính là cubic Bezier với $P_0=(0,0)$, $P_1=(x_1,y_1)$, $P_2=(x_2,y_2)$, $P_3=(1,1)$ map animation time $\to$ progress.
+
+\switchcolumn*
+
+\textbf{Q45. Bezier curves in robotics path planning?}\\
+Robot arms, drones, and autonomous vehicles use Bezier curves to generate \textbf{smooth, $C^2$-continuous} trajectories that respect velocity / acceleration limits. Compared with piecewise-linear paths, Bezier paths reduce jerk (the third derivative), which lowers actuator wear and battery drain. The convex hull property gives \textbf{guaranteed safety bounds} for collision checking — if the convex hull is obstacle-free, so is the trajectory. Quintic Beziers ($n=5$) are common because they give independent control of position, velocity, and acceleration at both ends.
+
+\switchcolumn
+
+\textbf{Câu 45. Bezier trong path planning robotics?}\\
+Cánh tay robot, drone, xe tự hành dùng Bezier curve sinh quỹ đạo \textbf{mượt, $C^2$} tôn trọng giới hạn vận tốc / gia tốc. So với path piecewise-linear, Bezier giảm jerk (đạo hàm bậc 3), giảm hao actuator và pin. Tính chất convex hull cho \textbf{biên an toàn} cho collision check — convex hull free thì trajectory cũng free. Quintic Bezier ($n=5$) phổ biến vì kiểm soát độc lập vị trí, vận tốc, gia tốc tại cả hai đầu.
+
+\switchcolumn*
+
+\textbf{Q46. Fastest way to compute $B(t)$ at one $t$ for 4 control points?}\\
+For a single $t$ on a cubic ($n=3$): \textbf{De Casteljau} costs $3{+}2{+}1=6$ linear interpolations, each one multiplication-add per coordinate, so $\sim 12$ FLOPs in 2D. Alternative: Horner's rule on the polynomial form $B(t)=((c_3 t + c_2) t + c_1) t + c_0$ where $c_i$ are precomputed Bernstein-coefficient combinations — slightly cheaper if only one $t$ value is needed and stability isn't critical. For \textbf{many} $t$ samples, precompute the Bernsteins or use Horner. For \textbf{robust} subdivision and intersection, always De Casteljau.
+
+\switchcolumn
+
+\textbf{Câu 46. Cách nhanh nhất tính $B(t)$ với 4 control point?}\\
+Với một $t$ trên cubic ($n=3$): \textbf{De Casteljau} tốn $3{+}2{+}1=6$ phép nội suy tuyến tính, mỗi phép 1 multiply-add / coord, tổng $\sim 12$ FLOPs ở 2D. Cách khác: Horner trên dạng đa thức $B(t)=((c_3 t + c_2) t + c_1) t + c_0$ với $c_i$ là tổ hợp Bernstein precomputed — rẻ hơn chút nếu chỉ 1 $t$ và không cần stability. Với \textbf{nhiều} mẫu $t$, precompute Bernstein hoặc Horner. Với \textbf{robust} subdivision/intersection, luôn De Casteljau.
+
+\switchcolumn*
+
+\textbf{Q47. Compute $S(0.5, 0.5)$ on a $4\times 4$ control net — step by step.}\\
+Let the net be $P_{i,j}$, $i,j\in\{0,1,2,3\}$. \textbf{Step 1}: For each row $i$, run cubic De Casteljau in $v$ at $0.5$ on $\{P_{i,0},P_{i,1},P_{i,2},P_{i,3}\}$, producing $Q_i$. \textbf{Step 2}: Run cubic De Casteljau in $u$ at $0.5$ on $\{Q_0, Q_1, Q_2, Q_3\}$. \textbf{Step 3}: Output is $S(0.5, 0.5)$. Total: 4 row reductions of cost 6 lerps + 1 final reduction of 6 lerps = 30 linear interpolations.
+
+\switchcolumn
+
+\textbf{Câu 47. Tính $S(0.5, 0.5)$ trên control net $4\times 4$ — từng bước.}\\
+Cho net $P_{i,j}$, $i,j\in\{0,1,2,3\}$. \textbf{Bước 1}: Với mỗi hàng $i$, chạy cubic De Casteljau theo $v$ tại $0.5$ trên $\{P_{i,0},P_{i,1},P_{i,2},P_{i,3}\}$, ra $Q_i$. \textbf{Bước 2}: Chạy cubic De Casteljau theo $u$ tại $0.5$ trên $\{Q_0,\ldots,Q_3\}$. \textbf{Bước 3}: Kết quả là $S(0.5, 0.5)$. Tổng: 4 row reduction × 6 lerp + 1 final reduction × 6 lerp = 30 lerp.
+
+\switchcolumn*
+
+\textbf{Q48. Bezier curve at $t=0.25$ — same control points as Q23?}\\
+With $t=0.25$, $1-t=0.75$.
+\textbf{Level 1}: $P_0^{(1)}=0.75(0,0)+0.25(1,3)=(0.25, 0.75)$; $P_1^{(1)}=0.75(1,3)+0.25(3,3)=(1.5, 3)$; $P_2^{(1)}=0.75(3,3)+0.25(4,0)=(3.25, 2.25)$.
+\textbf{Level 2}: $P_0^{(2)}=0.75(0.25,0.75)+0.25(1.5,3)=(0.5625, 1.3125)$; $P_1^{(2)}=0.75(1.5,3)+0.25(3.25,2.25)=(1.9375, 2.8125)$.
+\textbf{Level 3}: $B(0.25)=0.75(0.5625,1.3125)+0.25(1.9375,2.8125)=(0.9375, 1.6875)$.
+Note: by symmetry of the polygon about $x=2$, $B(0.25)$ and $B(0.75)$ should mirror — indeed $0.9375 + 3.0625 = 4 = 2\cdot 2$ and the $y$-values match $1.6875$. \checkmark
+
+\switchcolumn
+
+\textbf{Câu 48. Tính $B(0.25)$ — cùng control point Câu 23?}\\
+Với $t=0.25$, $1-t=0.75$.
+\textbf{Level 1}: $P_0^{(1)}=0.75(0,0)+0.25(1,3)=(0.25, 0.75)$; $P_1^{(1)}=0.75(1,3)+0.25(3,3)=(1.5, 3)$; $P_2^{(1)}=0.75(3,3)+0.25(4,0)=(3.25, 2.25)$.
+\textbf{Level 2}: $P_0^{(2)}=0.75(0.25,0.75)+0.25(1.5,3)=(0.5625, 1.3125)$; $P_1^{(2)}=0.75(1.5,3)+0.25(3.25,2.25)=(1.9375, 2.8125)$.
+\textbf{Level 3}: $B(0.25)=0.75(0.5625,1.3125)+0.25(1.9375,2.8125)=(0.9375, 1.6875)$.
+Lưu ý: do polygon đối xứng qua $x=2$, $B(0.25)$ và $B(0.75)$ phải đối xứng — đúng vì $0.9375 + 3.0625 = 4 = 2\cdot 2$ và $y$ cùng $1.6875$. \checkmark
+
+\switchcolumn*
+
+\textbf{Q49. Why might floating-point errors accumulate in Bernstein direct evaluation but not in De Casteljau?}\\
+Direct evaluation expands $B_{i,n}(t)=\binom{n}{i}(1-t)^{n-i}t^i$. For $t$ near $0$ or $1$, one of $t^i$ and $(1-t)^{n-i}$ is tiny, the other near 1, and the binomial coefficient can be large — multiplying tiny by large amplifies relative error, and summing terms with mixed signs (after substitution into the polynomial) causes \textbf{cancellation}. De Casteljau uses only \textbf{convex combinations} of points, which never amplify error: the absolute error of each lerp is bounded by the spread of inputs, and the scheme is forward-stable. This is a classic \textbf{Wilkinson stability} result.
+
+\switchcolumn
+
+\textbf{Câu 49. Vì sao Bernstein trực tiếp tích lũy sai số floating-point còn De Casteljau thì không?}\\
+Bernstein trực tiếp khai triển $B_{i,n}(t)=\binom{n}{i}(1-t)^{n-i}t^i$. Khi $t$ gần $0$ hoặc $1$, một trong $t^i$ hoặc $(1-t)^{n-i}$ rất nhỏ, cái kia gần 1, và binomial có thể lớn — nhân nhỏ với lớn khuếch đại sai số tương đối, và cộng các số hạng khác dấu (sau khi mở rộng) gây \textbf{cancellation}. De Casteljau chỉ \textbf{tổ hợp lồi}, không khuếch đại sai số: sai số tuyệt đối mỗi lerp bị chặn bởi đường kính cụm input, scheme là forward-stable. Đây là kết quả \textbf{Wilkinson stability} kinh điển.
+
+\switchcolumn*
+
+\textbf{Q50. Cost of De Casteljau for degree-$n$ curve?}\\
+At level $k$ ($k=1,\ldots,n$), there are $n-k+1$ linear interpolations, each costing $2$ multiplications and $1$ addition per coordinate (or one fused multiply-add: $(1-t)A + tB$). Total scalar lerps: $\sum_{k=1}^{n} (n-k+1) = \tfrac{n(n+1)}{2}$. So \textbf{$O(n^2)$ operations}, and for $d$-dimensional points, $\sim d \cdot n(n+1)/2$ multiplies. For $n=3, d=3$: $\sim 18$ multiplies. Compared with direct Bernstein at $O(n)$ if Bernsteins are precomputed, De Casteljau is constant-factor slower but stable; for the $n=3$ case used 99\% of the time, the difference is negligible.
+
+\switchcolumn
+
+\textbf{Câu 50. Chi phí De Casteljau cho curve bậc $n$?}\\
+Tại level $k$ ($k=1,\ldots,n$) có $n-k+1$ phép nội suy, mỗi phép 2 multiply + 1 add / coord (hoặc 1 fused multiply-add: $(1-t)A + tB$). Tổng số lerp: $\sum_{k=1}^{n} (n-k+1) = \tfrac{n(n+1)}{2}$. Vậy \textbf{$O(n^2)$}, với điểm $d$ chiều thì $\sim d \cdot n(n+1)/2$ multiply. Với $n=3, d=3$: $\sim 18$ multiply. So với Bernstein trực tiếp $O(n)$ khi Bernstein đã precomputed, De Casteljau chậm hơn hằng số nhưng stable; với $n=3$ dùng 99\% trường hợp, chênh lệch không đáng kể.
+
+\end{paracol}

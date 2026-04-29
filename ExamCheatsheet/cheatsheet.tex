@@ -1,0 +1,195 @@
+% =====================================================================
+% IT516 - Advanced Computer Graphics : Final Exam Bilingual Cheatsheet
+% Two-column English | Vietnamese layout via paracol package
+% Compile with:  xelatex cheatsheet.tex   (run twice)
+% =====================================================================
+\documentclass[a4paper,10pt]{extarticle}
+
+% ---------- Page geometry: landscape A4, ultra-thin margins ----------
+\usepackage[a4paper,landscape,top=0.5cm,bottom=0.7cm,left=0.6cm,right=0.6cm,headsep=0pt,footskip=0pt]{geometry}
+
+% ---------- Unicode support via XeLaTeX (no polyglossia) ----------
+% Polyglossia was inadvertently affecting line metrics on Vietnamese-heavy
+% paracol columns; using fontspec alone gives uniform metrics across both
+% columns, since both languages render in the same font with native Unicode.
+\usepackage{fontspec}
+\defaultfontfeatures{Renderer=Basic}
+\setmainfont{Latin Modern Roman}
+\setsansfont{Latin Modern Sans}
+\setmonofont{Latin Modern Mono}
+
+% ---------- Math + graphics ----------
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,decorations.pathreplacing,shapes.geometric,fit,backgrounds}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+
+% --- paracol-friendly non-floating algorithm wrapper ---
+% Float environments (algorithm[H]) are not allowed in paracol two-column mode,
+% so we redefine `algorithm` to be a plain framed minipage, and locally redefine
+% \caption inside it to typeset a bold header instead of float-numbered caption.
+\makeatletter
+\renewenvironment{algorithm}[1][]{%
+  \par\smallskip\noindent
+  \begin{minipage}{\linewidth}%
+    \hrule height 0.6pt\smallskip
+    \renewcommand{\caption}[1]{\smallskip\hrule height 0.3pt\smallskip\textbf{Algorithm: ##1}}%
+}{%
+    \smallskip\hrule height 0.6pt
+  \end{minipage}\par\smallskip
+}
+\makeatother
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=*,topsep=2pt,partopsep=0pt,parsep=1pt,itemsep=1pt}
+\usepackage{multicol}
+
+% ---------- Two-column bilingual layout ----------
+\usepackage{paracol}
+\setlength{\columnseprule}{0.4pt}
+\setcolumnwidth{0.495\textwidth, 0.495\textwidth}
+
+% ---------- Compactness ----------
+\usepackage{titlesec}
+\titleformat*{\section}{\normalsize\bfseries\color{blue!70!black}}
+\titleformat*{\subsection}{\normalsize\bfseries\color{purple!80!black}}
+\titleformat*{\subsubsection}{\normalsize\bfseries}
+\titlespacing*{\section}{0pt}{4pt}{2pt}
+\titlespacing*{\subsection}{0pt}{3pt}{1pt}
+\titlespacing*{\subsubsection}{0pt}{2pt}{1pt}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1pt}
+\linespread{1.0}
+
+% --- Lock baseline so Vietnamese diacritics don't enlarge line height ---
+% Without this, VI columns with dense diacritics (Cộng, Ưu, Hồi, Đầu, Chuỗi...)
+% get larger baselineskip than EN columns, making them look "bigger".
+\usepackage{setspace}
+\setstretch{1.0}
+% Force explicit baseline for normalsize — content-independent.
+% 14pt baseline gives diacritic-dense Vietnamese lines enough room without
+% TeX stretching the line, so EN and VI columns get identical line height.
+% \lineskiplimit=-1pt prevents TeX from inserting extra space when a line
+% has slightly taller content (Vietnamese tone marks).
+\renewcommand{\normalsize}{\fontsize{10pt}{14pt}\selectfont}
+\AtBeginDocument{%
+  \normalsize
+  \lineskiplimit=-1pt
+  \lineskip=0pt
+}
+
+% --- Aggressive line-breaking to prevent overfull boxes (kept readable) ---
+\tolerance=4000
+\hbadness=10000
+\emergencystretch=3em
+\sloppy
+\hyphenpenalty=50
+\exhyphenpenalty=50
+\hfuzz=2pt
+\vfuzz=2pt
+
+% --- Allow \texttt content to break inside (VTK pipelines etc.) ---
+\usepackage{seqsplit}
+\renewcommand{\ttdefault}{lmtt}
+% Allow breaking at almost any character in monospace strings
+\usepackage{microtype}
+
+% Latin Modern lacks proper small caps via fontspec — fall back to bold
+\renewcommand{\textsc}[1]{\textbf{#1}}
+
+% ---------- Custom commands ----------
+\newcommand{\hl}[1]{\textbf{\color{red!70!black}#1}}
+\newcommand{\kw}[1]{\textbf{#1}}
+\newcommand{\vect}[1]{\mathbf{#1}}
+
+% Compact list style
+\newenvironment{cbi}{\begin{itemize}[leftmargin=1.2em,itemsep=0.5pt,topsep=1pt]}{\end{itemize}}
+\newenvironment{cbe}{\begin{enumerate}[leftmargin=1.4em,itemsep=0.5pt,topsep=1pt]}{\end{enumerate}}
+
+\pagestyle{empty}
+\raggedbottom
+
+\begin{document}
+
+% ---------- Title block ----------
+\begin{center}
+\textbf{\large IT516 -- Advanced Computer Graphics : Final Exam Cheat Sheet}\\[1pt]
+\footnotesize Bilingual Reference (EN $|$ VI) -- HCMIU MIT -- 25/04/2026 -- Open-book, paper only
+\end{center}
+\vspace{-6pt}\hrule\vspace{4pt}
+
+% ---------- Front matter: Last-minute formula sheet ----------
+\input{00_formula_sheet.tex}
+
+\clearpage
+
+% ---------- Part I: Reference cheatsheet ----------
+\begin{center}
+\textbf{\large Part~I — Reference Cheatsheet}\\[1pt]
+\footnotesize Theory + algorithms + tables, organised by topic
+\end{center}
+\vspace{-6pt}\hrule\vspace{4pt}
+
+\input{01_vr_ar.tex}
+
+\vfill\hrule\vspace{4pt}
+
+\input{02_geometric_modeling.tex}
+
+\vfill\hrule\vspace{4pt}
+
+\input{03_medical_imaging.tex}
+
+\vfill\hrule\vspace{4pt}
+
+\input{04_bezier.tex}
+
+\vfill\hrule\vspace{4pt}
+
+\input{06_bicubic_example.tex}
+
+\clearpage
+\begin{center}
+\textbf{\large Part~II — Theoretical Q\&A Bank} \\[1pt]
+\footnotesize Essay-style answers organised by topic for quick recall during exam
+\end{center}
+\vspace{-6pt}\hrule\vspace{4pt}
+
+\input{qa_01_vr_ar.tex}
+
+\vfill\hrule\vspace{4pt}
+
+\input{qa_02a_geometric_tri_holefill.tex}
+
+\vfill\hrule\vspace{4pt}
+
+\input{qa_02b_geometric_simp_denoise.tex}
+
+\vfill\hrule\vspace{4pt}
+
+\input{qa_03a_medical_modalities.tex}
+
+\vfill\hrule\vspace{4pt}
+
+\input{qa_03b_medical_seg_papers.tex}
+
+\vfill\hrule\vspace{4pt}
+
+\input{qa_04_bezier.tex}
+
+\clearpage
+\begin{center}
+\textbf{\large Part~III — Bilingual Glossary} \\[1pt]
+\footnotesize EN $\leftrightarrow$ VI technical vocabulary by topic
+\end{center}
+\vspace{-6pt}\hrule\vspace{4pt}
+
+\input{05_glossary.tex}
+
+\end{document}

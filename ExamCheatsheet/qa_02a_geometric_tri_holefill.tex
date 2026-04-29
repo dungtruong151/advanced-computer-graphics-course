@@ -1,0 +1,458 @@
+\begin{paracol}{2}
+\section*{QA2a. Theoretical Q\&A — Triangulation \& Hole Filling}
+
+\textbf{Q1. What is triangulation? Why do we need it in 3D modeling?}\\
+\textbf{Triangulation} is the process of decomposing a geometric domain (a point cloud, polygon, or surface) into a set of non-overlapping triangles whose union covers the domain. In 3D modeling we triangulate because the \textbf{triangle} is the simplest planar primitive: it is always convex, always planar, and uniquely defined by three vertices, which makes it ideal for GPU rasterization, ray-tracing, and finite-element analysis. Most rendering APIs (OpenGL, Vulkan, DirectX) only consume triangle meshes natively, so any higher-order surface (NURBS, subdivision, implicit) must be tessellated into triangles before display. Triangulations also support \textbf{barycentric interpolation} of attributes (color, normal, UV), which is the foundation of Gouraud and Phong shading. In geometry processing, triangle meshes form a discrete \textbf{2-manifold} on which we can define discrete differential operators (Laplacian, divergence, curvature). Without triangulation, downstream tasks like physics simulation, 3D printing slicing, and collision detection are impossible. Hence triangulation is the universal bridge between raw geometric data and computable structure.
+
+\switchcolumn
+
+\section*{QA2a. Câu hỏi lý thuyết — Tam giác hóa \& Vá lỗ}
+
+\textbf{Câu 1. Tam giác hóa là gì? Tại sao cần trong mô hình hóa 3D?}\\
+\textbf{Tam giác hóa} (triangulation) là quá trình phân hoạch một miền hình học (point cloud, đa giác, bề mặt) thành tập các tam giác không chồng lấn phủ kín toàn miền. Trong mô hình hóa 3D ta cần tam giác hóa vì \textbf{triangle} là primitive phẳng đơn giản nhất: luôn lồi, luôn phẳng, xác định duy nhất bởi ba vertex, lý tưởng cho GPU rasterization, ray-tracing và FEM. Hầu hết rendering API (OpenGL, Vulkan, DirectX) chỉ nhận triangle mesh làm input, nên các bề mặt bậc cao (NURBS, subdivision, implicit) đều phải được tessellate thành tam giác trước khi hiển thị. Triangulation cho phép \textbf{nội suy barycentric} các thuộc tính (color, normal, UV) — nền tảng của Gouraud và Phong shading. Trong geometry processing, triangle mesh tạo thành \textbf{2-manifold} rời rạc trên đó ta định nghĩa được các toán tử vi phân rời rạc (Laplacian, divergence, curvature). Không có tam giác hóa, các tác vụ downstream như mô phỏng vật lý, slicing in 3D, và collision detection đều bất khả thi. Vì vậy tam giác hóa là cầu nối phổ quát giữa dữ liệu hình học thô và cấu trúc tính toán được.
+
+\switchcolumn*
+
+\textbf{Q2. Given a 3D point cloud, how do you triangulate it? List the main algorithms.}\\
+Triangulating a 3D point cloud means recovering a surface mesh that interpolates or approximates the points. The main algorithm families are: (i) \textbf{Ball Pivoting Algorithm} (BPA) — rolls a virtual ball of radius $\rho$ over the cloud, creating a triangle whenever the ball touches three points without containing any other; (ii) \textbf{Poisson Surface Reconstruction} — solves an indicator-function PDE driven by oriented normals, then extracts an isosurface via Marching Cubes; (iii) \textbf{Delaunay-based} methods (3D Delaunay tetrahedralization $\to$ alpha-shape filtering) which are mathematically optimal but expensive, $O(N^2)$ in the worst case; (iv) \textbf{Greedy projection triangulation} (PCL) — projects local neighborhoods onto a tangent plane and triangulates incrementally; (v) \textbf{Marching Cubes} on a signed-distance field for implicit surfaces; (vi) \textbf{Power Crust} and \textbf{Cocone} — provable reconstruction guarantees from samples. The choice depends on noise level, density uniformity, and whether normals are available. Typical pipeline: \textbf{denoise} $\to$ \textbf{normal estimation} $\to$ \textbf{reconstruction} $\to$ \textbf{post-processing} (hole filling, decimation).
+
+\switchcolumn
+
+\textbf{Câu 2. Cho point cloud 3D, làm sao tam giác hóa? Liệt kê các thuật toán chính.}\\
+Tam giác hóa point cloud 3D nghĩa là khôi phục mesh bề mặt nội suy hoặc xấp xỉ các điểm. Các họ thuật toán chính: (i) \textbf{Ball Pivoting Algorithm} (BPA) — lăn một quả banh ảo bán kính $\rho$ qua point cloud, sinh tam giác khi banh chạm ba điểm mà không chứa điểm nào khác; (ii) \textbf{Poisson Surface Reconstruction} — giải PDE indicator function dẫn dắt bởi normal có hướng, rồi trích isosurface bằng Marching Cubes; (iii) phương pháp dựa trên \textbf{Delaunay} (3D Delaunay tetrahedralization $\to$ lọc alpha-shape) — tối ưu về toán học nhưng đắt, $O(N^2)$ worst case; (iv) \textbf{Greedy projection triangulation} (PCL) — chiếu lân cận cục bộ lên tangent plane rồi tam giác hóa từng bước; (v) \textbf{Marching Cubes} trên trường khoảng cách có dấu cho implicit surface; (vi) \textbf{Power Crust} và \textbf{Cocone} — đảm bảo tái tạo có chứng minh từ mẫu. Lựa chọn tùy mức độ noise, độ đồng đều mật độ, và có normal hay không. Pipeline điển hình: \textbf{denoise} $\to$ \textbf{ước lượng normal} $\to$ \textbf{reconstruction} $\to$ \textbf{post-processing} (vá lỗ, decimation).
+
+\switchcolumn*
+
+\textbf{Q3. Explain Delaunay triangulation and its empty-circle property.}\\
+A \textbf{Delaunay triangulation} $\mathrm{DT}(P)$ of a point set $P \subset \mathbb{R}^2$ is a triangulation such that for every triangle, its \textbf{circumscribed circle} contains no other point of $P$ in its interior. This is the \textbf{empty circle property} (or empty circumcircle criterion). Equivalently, a triangulation is Delaunay iff every internal edge is \textbf{locally Delaunay}: the sum of the two opposite angles is at most $180^\circ$. The Delaunay triangulation exists and is unique whenever points are in \textbf{general position} (no four cocircular). It can be computed in $O(N \log N)$ using divide-and-conquer, sweep-line (Fortune), or randomized incremental insertion (Bowyer-Watson). The empty-circle property guarantees that triangles are as ``fat'' as possible — Delaunay maximizes the \textbf{minimum angle} over all triangulations of $P$, avoiding thin slivers. In 3D, the analogue is the Delaunay tetrahedralization with the empty-sphere property. This makes Delaunay the de-facto standard for high-quality meshing in CAD, GIS, and FEM.
+
+\switchcolumn
+
+\textbf{Câu 3. Giải thích Delaunay triangulation và tính chất hình tròn rỗng.}\\
+\textbf{Delaunay triangulation} $\mathrm{DT}(P)$ của tập điểm $P \subset \mathbb{R}^2$ là tam giác hóa sao cho mọi tam giác có \textbf{đường tròn ngoại tiếp} không chứa điểm nào khác của $P$ ở trong. Đây là \textbf{tính chất hình tròn rỗng} (empty circumcircle). Tương đương, một triangulation là Delaunay khi và chỉ khi mọi cạnh nội bộ là \textbf{locally Delaunay}: tổng hai góc đối diện $\le 180^\circ$. Delaunay tồn tại và duy nhất khi các điểm ở \textbf{general position} (không có 4 điểm đồng viên). Có thể tính trong $O(N \log N)$ bằng divide-and-conquer, sweep-line (Fortune), hoặc randomized incremental insertion (Bowyer-Watson). Tính chất hình tròn rỗng đảm bảo tam giác ``béo'' nhất có thể — Delaunay \textbf{cực đại hóa góc nhỏ nhất} trên mọi triangulation của $P$, tránh sliver. Trong 3D, tương ứng là Delaunay tetrahedralization với tính chất hình cầu rỗng. Do đó Delaunay là chuẩn de-facto cho meshing chất lượng cao trong CAD, GIS, FEM.
+
+\switchcolumn*
+
+\textbf{Q4. Why does Delaunay maximize the minimum angle? Why is this desirable?}\\
+The \textbf{max-min angle} property follows from the \textbf{flip lemma}: if an internal edge $e$ shared by two triangles fails the local Delaunay condition (the opposite vertex lies inside the circumcircle), then \textbf{flipping} $e$ to the other diagonal of the convex quadrilateral strictly increases the minimum of the six angles involved. Iterating flips converges (the angle vector strictly improves in lexicographic order), and the fixed point is the Delaunay triangulation. Thus among all triangulations of the same point set, Delaunay has the \textbf{lexicographically largest sorted angle vector}, in particular the largest minimum angle. This is desirable because thin \textbf{sliver triangles} (minimum angle near $0^\circ$) cause: (i) numerical instability in linear systems (large condition numbers in FEM stiffness matrices); (ii) interpolation error blow-up since gradient estimates depend on $1/\sin\theta_{\min}$; (iii) shading artifacts due to ill-conditioned barycentric coordinates; (iv) collision-detection robustness issues. Maximizing the minimum angle therefore improves both numerical accuracy and visual quality.
+
+\switchcolumn
+
+\textbf{Câu 4. Tại sao Delaunay cực đại hóa góc nhỏ nhất? Tại sao điều này mong muốn?}\\
+Tính chất \textbf{max-min angle} suy ra từ \textbf{flip lemma}: nếu cạnh nội bộ $e$ chung bởi hai tam giác không thỏa local Delaunay (đỉnh đối diện nằm trong đường tròn ngoại tiếp), thì \textbf{flip} $e$ sang đường chéo kia của tứ giác lồi sẽ nghiêm ngặt tăng góc nhỏ nhất trong sáu góc liên quan. Lặp flip hội tụ (vector góc cải thiện theo thứ tự từ điển), và điểm cố định chính là Delaunay. Vì vậy trong mọi triangulation của cùng tập điểm, Delaunay có \textbf{vector góc sắp xếp lớn nhất theo thứ tự từ điển}, đặc biệt là góc nhỏ nhất lớn nhất. Điều này mong muốn vì \textbf{sliver} (góc nhỏ gần $0^\circ$) gây: (i) bất ổn định số trong hệ tuyến tính (condition number lớn trong ma trận stiffness FEM); (ii) sai số nội suy bùng nổ vì gradient phụ thuộc $1/\sin\theta_{\min}$; (iii) artifact shading do barycentric không ổn định; (iv) vấn đề robustness trong collision detection. Cực đại hóa góc nhỏ nhất cải thiện cả độ chính xác số học lẫn chất lượng hiển thị.
+
+\switchcolumn*
+
+\textbf{Q5. Explain the Bowyer-Watson algorithm step-by-step.}\\
+\textbf{Bowyer-Watson} is a randomized incremental algorithm for constructing the Delaunay triangulation in expected $O(N \log N)$ time.
+\begin{enumerate}[leftmargin=*,nosep]
+\item Initialize with a \textbf{super-triangle} (or super-tetrahedron in 3D) large enough to contain all points $P$.
+\item For each point $p \in P$ inserted in random order:
+\begin{enumerate}[leftmargin=*,nosep]
+\item Find all triangles whose \textbf{circumcircle contains $p$}; call this the \textbf{bad set} $B$.
+\item Compute the \textbf{boundary} (cavity) of $B$ — the polygon of edges shared by exactly one triangle in $B$.
+\item Delete all triangles in $B$.
+\item Re-triangulate the cavity by connecting $p$ to every boundary edge, creating a fan of new triangles.
+\end{enumerate}
+\item After all insertions, remove all triangles incident to the super-triangle vertices.
+\end{enumerate}
+The key invariant is that the empty-circle property is restored after each insertion. Robustness requires \textbf{exact predicates} (in-circle, orientation) to avoid topological inconsistency from floating-point errors.
+
+\switchcolumn
+
+\textbf{Câu 5. Giải thích Bowyer-Watson từng bước.}\\
+\textbf{Bowyer-Watson} là thuật toán incremental ngẫu nhiên xây Delaunay trong kỳ vọng $O(N \log N)$.
+\begin{enumerate}[leftmargin=*,nosep]
+\item Khởi tạo với \textbf{super-triangle} (super-tetrahedron trong 3D) đủ lớn chứa toàn bộ $P$.
+\item Với mỗi điểm $p \in P$ chèn theo thứ tự ngẫu nhiên:
+\begin{enumerate}[leftmargin=*,nosep]
+\item Tìm mọi tam giác có \textbf{circumcircle chứa $p$}; gọi là \textbf{bad set} $B$.
+\item Tính \textbf{boundary} (cavity) của $B$ — đa giác các cạnh thuộc đúng một tam giác trong $B$.
+\item Xóa toàn bộ tam giác trong $B$.
+\item Tam giác hóa lại cavity bằng cách nối $p$ với từng cạnh biên, tạo fan tam giác mới.
+\end{enumerate}
+\item Sau khi chèn xong, xóa mọi tam giác kề super-triangle vertex.
+\end{enumerate}
+Bất biến chính: tính chất hình tròn rỗng được khôi phục sau mỗi lần chèn. Robustness cần \textbf{exact predicate} (in-circle, orientation) để tránh bất nhất topology do lỗi floating-point.
+
+\switchcolumn*
+
+\textbf{Q6. What is the in-circle predicate? Write the determinant formula.}\\
+The \textbf{in-circle predicate} tests whether a point $D$ lies inside, on, or outside the circumcircle of triangle $ABC$ (with $A,B,C$ in counter-clockwise order). It is the geometric heart of Delaunay algorithms. The classical determinant formula is:
+\[
+\mathrm{InCircle}(A,B,C,D) = \det \begin{pmatrix}
+A_x - D_x & A_y - D_y & (A_x - D_x)^2 + (A_y - D_y)^2 \\
+B_x - D_x & B_y - D_y & (B_x - D_x)^2 + (B_y - D_y)^2 \\
+C_x - D_x & C_y - D_y & (C_x - D_x)^2 + (C_y - D_y)^2
+\end{pmatrix}
+\]
+A positive value means $D$ is \textbf{inside} the circumcircle, zero means \textbf{on} it, and negative means \textbf{outside}. This is a degree-4 polynomial in the coordinates, so floating-point evaluation can flip sign near zero and produce inconsistent triangulations. Robust implementations (Shewchuk's predicates) use \textbf{adaptive exact arithmetic} — start with cheap approximate evaluation, fall back to exact only when the magnitude is too small to trust. The 3D analogue is the in-sphere predicate, a $4\times 4$ determinant.
+
+\switchcolumn
+
+\textbf{Câu 6. In-circle predicate là gì? Viết công thức định thức.}\\
+\textbf{In-circle predicate} kiểm tra điểm $D$ nằm trong, trên, hay ngoài đường tròn ngoại tiếp tam giác $ABC$ (với $A,B,C$ counter-clockwise). Đây là trái tim hình học của thuật toán Delaunay. Công thức định thức cổ điển:
+\[
+\mathrm{InCircle}(A,B,C,D) = \det \begin{pmatrix}
+A_x - D_x & A_y - D_y & (A_x - D_x)^2 + (A_y - D_y)^2 \\
+B_x - D_x & B_y - D_y & (B_x - D_x)^2 + (B_y - D_y)^2 \\
+C_x - D_x & C_y - D_y & (C_x - D_x)^2 + (C_y - D_y)^2
+\end{pmatrix}
+\]
+Giá trị dương: $D$ \textbf{trong} circumcircle, 0: \textbf{trên}, âm: \textbf{ngoài}. Đây là đa thức bậc 4 theo tọa độ, nên đánh giá floating-point có thể đảo dấu gần 0 sinh triangulation bất nhất. Implementation robust (predicate của Shewchuk) dùng \textbf{adaptive exact arithmetic} — bắt đầu bằng đánh giá xấp xỉ rẻ, chỉ rơi về exact khi magnitude quá nhỏ. Tương ứng 3D là in-sphere predicate, định thức $4\times 4$.
+
+\switchcolumn*
+
+\textbf{Q7. Dual relationship between Delaunay triangulation and Voronoi diagram?}\\
+The \textbf{Voronoi diagram} $\mathrm{Vor}(P)$ partitions the plane into cells, where cell $V_p$ contains all points closer to $p \in P$ than to any other site. The Delaunay triangulation is the \textbf{straight-line dual graph} of the Voronoi diagram: there is an edge $pq$ in $\mathrm{DT}(P)$ iff Voronoi cells $V_p$ and $V_q$ share an edge, and a triangle $pqr$ in $\mathrm{DT}(P)$ iff $V_p,V_q,V_r$ meet at a Voronoi vertex. The Voronoi vertex at the meeting of three cells is exactly the \textbf{circumcenter} of the corresponding Delaunay triangle, which is why Delaunay's empty-circle property is the dual of Voronoi's empty-cell property. Computationally one structure yields the other in linear time. This duality is exploited in \textbf{centroidal Voronoi tessellations} (CVT) for high-quality remeshing, in nearest-neighbor queries, and in mesh generation algorithms like Lloyd's relaxation. Together they form the foundational duo of computational geometry.
+
+\switchcolumn
+
+\textbf{Câu 7. Quan hệ đối ngẫu giữa Delaunay và Voronoi?}\\
+\textbf{Voronoi diagram} $\mathrm{Vor}(P)$ chia mặt phẳng thành các cell, cell $V_p$ chứa mọi điểm gần $p \in P$ hơn các site khác. Delaunay là \textbf{đồ thị đối ngẫu đường thẳng} của Voronoi: có cạnh $pq$ trong $\mathrm{DT}(P)$ khi và chỉ khi cell $V_p$ và $V_q$ chia cạnh chung, và có tam giác $pqr$ khi và chỉ khi $V_p,V_q,V_r$ gặp tại một Voronoi vertex. Voronoi vertex tại điểm gặp của ba cell chính là \textbf{circumcenter} của tam giác Delaunay tương ứng, nên tính chất hình tròn rỗng của Delaunay là đối ngẫu của tính chất cell rỗng của Voronoi. Về tính toán, có cấu trúc này thì lấy được cấu trúc kia trong thời gian tuyến tính. Đối ngẫu được khai thác trong \textbf{centroidal Voronoi tessellations} (CVT) cho remeshing chất lượng cao, trong nearest-neighbor query, và trong các thuật toán mesh generation như Lloyd relaxation. Cùng nhau chúng tạo thành cặp nền tảng của hình học tính toán.
+
+\switchcolumn*
+
+\textbf{Q8. Compare Delaunay vs Constrained Delaunay (CDT). When is CDT needed?}\\
+A \textbf{Constrained Delaunay Triangulation} (CDT) is a triangulation that contains a prescribed set of edges $E$ (constraints) and is ``as Delaunay as possible'' subject to those constraints. Standard Delaunay only respects the point set $P$ and may insert edges that cross required boundaries, which is unacceptable when modeling polygons with holes, GIS shorelines, or CAD profiles. Formally, an edge $e$ in CDT is \textbf{constrained Delaunay} if either $e \in E$, or its circumcircle contains no point of $P$ \emph{visible} from the interior of $e$ (visibility blocked by constraints). CDT is needed for: (i) polygon triangulation respecting holes and concavities; (ii) terrain modeling with rivers and ridges as breaklines; (iii) FEM meshing where material boundaries must be preserved; (iv) cartographic generalization where road centerlines act as constraints. Algorithms like Shewchuk's \texttt{Triangle} compute CDT by inserting constraint edges into a Delaunay triangulation and using \textbf{constrained edge flips}. CDT may sacrifice the global max-min angle property locally near constraints.
+
+\switchcolumn
+
+\textbf{Câu 8. So sánh Delaunay vs Constrained Delaunay (CDT). Khi nào cần CDT?}\\
+\textbf{Constrained Delaunay Triangulation} (CDT) là triangulation chứa tập cạnh chỉ định $E$ (constraint) và ``Delaunay nhất có thể'' với ràng buộc đó. Delaunay chuẩn chỉ tôn trọng tập điểm $P$, có thể chèn cạnh cắt qua biên bắt buộc — không chấp nhận được khi mô hình hóa đa giác có lỗ, đường bờ biển GIS, hay profile CAD. Hình thức, cạnh $e$ trong CDT là \textbf{constrained Delaunay} nếu $e \in E$, hoặc circumcircle không chứa điểm $P$ nào \emph{nhìn thấy} từ phần trong $e$ (visibility bị chặn bởi constraint). CDT cần cho: (i) tam giác hóa đa giác có lỗ và lõm; (ii) mô hình địa hình với sông, sống núi làm breakline; (iii) meshing FEM nơi biên vật liệu phải giữ; (iv) tổng quát hóa bản đồ với centerline đường làm constraint. Các thuật toán như \texttt{Triangle} của Shewchuk tính CDT bằng cách chèn constraint edge vào Delaunay rồi dùng \textbf{constrained edge flip}. CDT có thể hy sinh tính max-min angle toàn cục cục bộ gần constraint.
+
+\switchcolumn*
+
+\textbf{Q9. Explain Ball Pivoting Algorithm (BPA). Role of ball radius?}\\
+\textbf{Ball Pivoting Algorithm} (BPA, Bernardini et al. 1999) reconstructs a triangle mesh from an oriented point cloud by simulating a virtual ball of radius $\rho$ rolling over the points.
+\begin{enumerate}[leftmargin=*,nosep]
+\item Find a \textbf{seed triangle}: any three points such that the ball touches all three without containing any other point.
+\item For each boundary edge of the current mesh, \textbf{pivot} the ball around the edge until it hits a new point, creating a new triangle.
+\item Repeat until no more pivots are possible; restart with a new seed if the cloud has multiple components.
+\end{enumerate}
+The \textbf{ball radius} $\rho$ is the critical parameter. If $\rho$ is too small, the ball falls through the cloud creating holes wherever sample spacing exceeds $2\rho$. If $\rho$ is too large, the ball bridges across thin features, fusing geometry that should remain separate. A common heuristic sets $\rho$ to slightly larger than the median nearest-neighbor distance. \textbf{Multi-radius BPA} runs the algorithm with increasing radii to capture both fine details and large gaps. BPA is fast, memory-efficient, and preserves input points exactly — but is sensitive to noise and density variation.
+
+\switchcolumn
+
+\textbf{Câu 9. Giải thích Ball Pivoting (BPA). Vai trò bán kính banh?}\\
+\textbf{Ball Pivoting Algorithm} (BPA, Bernardini và cộng sự 1999) tái tạo triangle mesh từ point cloud có normal bằng cách mô phỏng banh ảo bán kính $\rho$ lăn qua các điểm.
+\begin{enumerate}[leftmargin=*,nosep]
+\item Tìm \textbf{seed triangle}: ba điểm sao cho banh chạm cả ba mà không chứa điểm nào khác.
+\item Với mỗi cạnh biên của mesh hiện tại, \textbf{pivot} banh quanh cạnh đó đến khi chạm điểm mới, sinh tam giác mới.
+\item Lặp đến khi không pivot được nữa; restart với seed mới nếu cloud có nhiều thành phần.
+\end{enumerate}
+\textbf{Bán kính banh} $\rho$ là tham số then chốt. $\rho$ quá nhỏ: banh lọt qua cloud sinh lỗ ở mọi chỗ khoảng cách mẫu vượt $2\rho$. $\rho$ quá lớn: banh bắc cầu qua chi tiết mỏng, hợp nhất hình học phải tách. Heuristic thường: $\rho$ hơi lớn hơn median nearest-neighbor distance. \textbf{Multi-radius BPA} chạy với bán kính tăng dần để bắt cả chi tiết nhỏ lẫn khoảng trống lớn. BPA nhanh, tiết kiệm memory, giữ input point chính xác — nhưng nhạy với noise và biến thiên mật độ.
+
+\switchcolumn*
+
+\textbf{Q10. Explain Poisson Surface Reconstruction. What equation?}\\
+\textbf{Poisson Surface Reconstruction} (Kazhdan, Bolitho, Hoppe 2006) reconstructs a watertight surface from oriented point samples by formulating reconstruction as a \textbf{Poisson problem}. Treat the surface as the boundary of a solid, and let $\chi:\mathbb{R}^3\to\{0,1\}$ be the indicator function (1 inside, 0 outside). The gradient $\nabla\chi$ is zero everywhere except at the surface, where it equals the inward normal as a distribution. Approximating with a smoothed indicator $\tilde\chi$, the input oriented points $\{p_i, \mathbf{n}_i\}$ define a vector field $\vec V$, and we seek $\tilde\chi$ such that $\nabla\tilde\chi \approx \vec V$. Taking divergence yields the \textbf{Poisson equation}:
+\[
+\Delta \tilde\chi = \nabla \cdot \vec V
+\]
+This is solved on an adaptive octree, then the surface is extracted as the isosurface $\tilde\chi = c$ via Marching Cubes. Poisson is robust to noise, produces smooth watertight meshes, and naturally fills small holes — but tends to oversmooth sharp features and depends on accurate normals. Screened Poisson (Kazhdan-Hoppe 2013) adds a positional constraint to recover sharp detail.
+
+\switchcolumn
+
+\textbf{Câu 10. Giải thích Poisson Surface Reconstruction. Phương trình gì?}\\
+\textbf{Poisson Surface Reconstruction} (Kazhdan, Bolitho, Hoppe 2006) tái tạo bề mặt watertight từ point sample có normal bằng cách công thức hóa thành \textbf{bài toán Poisson}. Coi bề mặt là biên của một khối, và $\chi:\mathbb{R}^3\to\{0,1\}$ là indicator function (1 trong, 0 ngoài). Gradient $\nabla\chi$ bằng 0 mọi nơi trừ trên bề mặt, nơi nó bằng inward normal dạng phân phối. Xấp xỉ bằng indicator được làm trơn $\tilde\chi$, các điểm có normal $\{p_i, \mathbf{n}_i\}$ định nghĩa vector field $\vec V$, và ta tìm $\tilde\chi$ sao cho $\nabla\tilde\chi \approx \vec V$. Lấy divergence cho \textbf{phương trình Poisson}:
+\[
+\Delta \tilde\chi = \nabla \cdot \vec V
+\]
+Giải trên adaptive octree, rồi trích bề mặt như isosurface $\tilde\chi = c$ qua Marching Cubes. Poisson robust với noise, sinh mesh watertight mượt, tự nhiên vá lỗ nhỏ — nhưng hay oversmooth feature sắc và phụ thuộc normal chính xác. Screened Poisson (2013) thêm positional constraint để khôi phục chi tiết sắc.
+
+\switchcolumn*
+
+\textbf{Q11. Compare BPA vs Poisson — when to use each?}\\
+\textbf{BPA} (Ball Pivoting) is an \textbf{interpolating} reconstruction: every input point becomes a mesh vertex, preserving sample positions exactly. \textbf{Poisson} is \textbf{approximating}: it fits a smooth implicit field through the points and resamples a new mesh. Use BPA when: input is clean (LiDAR, structured-light scan), density is uniform, you need to preserve original samples (e.g., for measurement traceability in metrology), and you want fast results — BPA is roughly $O(N)$ with spatial hashing. Use Poisson when: input is noisy (photogrammetry, RGB-D), density varies, you need a guaranteed watertight mesh for 3D printing or simulation, and you can afford an $O(N)$ octree solve. Poisson naturally fills small gaps — a side-effect that is desirable for repair but bad if the gaps were intentional. BPA produces topologically faithful but possibly non-watertight meshes; Poisson produces watertight but oversmoothed meshes. In practice, modern pipelines (Meshlab, Open3D) provide both and let the user choose based on data characteristics.
+
+\switchcolumn
+
+\textbf{Câu 11. So sánh BPA vs Poisson — khi nào dùng?}\\
+\textbf{BPA} là tái tạo \textbf{interpolating}: mọi input point thành vertex mesh, giữ vị trí mẫu chính xác. \textbf{Poisson} là \textbf{approximating}: fit trường implicit mượt qua các điểm rồi resample mesh mới. Dùng BPA khi: input sạch (LiDAR, structured-light), mật độ đồng đều, cần giữ sample gốc (vd: traceability đo lường trong metrology), và muốn nhanh — BPA $O(N)$ với spatial hashing. Dùng Poisson khi: input noisy (photogrammetry, RGB-D), mật độ biến thiên, cần watertight mesh cho in 3D hay simulation, chấp nhận $O(N)$ octree solve. Poisson tự nhiên vá khoảng trống nhỏ — tốt cho repair nhưng xấu nếu khoảng trống là cố ý. BPA cho mesh trung thành topology nhưng có thể không watertight; Poisson watertight nhưng oversmooth. Thực tế pipeline hiện đại (Meshlab, Open3D) cung cấp cả hai cho user chọn theo đặc tính dữ liệu.
+
+\switchcolumn*
+
+\textbf{Q12. What is alpha-shape? How does $\alpha$ affect the result?}\\
+The \textbf{alpha-shape} (Edelsbrunner-Mücke 1994) of a point set $P \subset \mathbb{R}^d$ generalizes the convex hull by parameterizing ``how tightly'' the boundary wraps the points. Geometrically, an edge/triangle/tetrahedron belongs to the alpha-complex if there exists an empty $\alpha$-ball (radius $\alpha$) that touches its vertices and contains no other point. As $\alpha \to \infty$, the alpha-shape becomes the convex hull. As $\alpha \to 0$, it degenerates to the input points themselves. Intermediate $\alpha$ produces shapes with concavities, holes, and multiple components — capturing the ``true'' shape suggested by the samples. \textbf{Small $\alpha$}: more detailed, more holes, sensitive to noise. \textbf{Large $\alpha$}: smoother, fewer holes, may bridge real cavities. Alpha-shapes are computed efficiently as a filtration of the Delaunay triangulation: every Delaunay simplex has a critical $\alpha$ at which it enters the complex. Applications: shape reconstruction from samples, molecular surface modeling, density-based clustering, and topological data analysis (persistent homology).
+
+\switchcolumn
+
+\textbf{Câu 12. Alpha-shape là gì? $\alpha$ ảnh hưởng kết quả thế nào?}\\
+\textbf{Alpha-shape} (Edelsbrunner-Mücke 1994) của tập điểm $P \subset \mathbb{R}^d$ tổng quát hóa convex hull bằng cách tham số hóa biên ``quấn chặt'' điểm thế nào. Hình học, một edge/triangle/tetrahedron thuộc alpha-complex nếu tồn tại $\alpha$-ball rỗng (bán kính $\alpha$) chạm các đỉnh mà không chứa điểm khác. Khi $\alpha \to \infty$, alpha-shape trở thành convex hull. Khi $\alpha \to 0$, suy biến thành chính các điểm. $\alpha$ trung gian sinh hình có lõm, lỗ, nhiều thành phần — bắt được hình ``thật'' mà sample gợi ý. \textbf{$\alpha$ nhỏ}: chi tiết hơn, nhiều lỗ, nhạy noise. \textbf{$\alpha$ lớn}: mượt hơn, ít lỗ, có thể nối qua khoang thật. Alpha-shape tính hiệu quả như filtration của Delaunay: mọi Delaunay simplex có $\alpha$ tới hạn để vào complex. Ứng dụng: tái tạo shape từ sample, surface phân tử, clustering theo mật độ, topological data analysis (persistent homology).
+
+\switchcolumn*
+
+\textbf{Q13. Explain Marching Cubes — why 256 cases reduce to 15?}\\
+\textbf{Marching Cubes} (Lorensen-Cline 1987) extracts a triangle mesh isosurface $f(x,y,z) = c$ from a 3D scalar field sampled on a regular grid. For each grid cube (8 corners), classify each corner as \textbf{inside} ($f \le c$) or \textbf{outside} ($f > c$), giving $2^8 = 256$ possible configurations. For each, a lookup table tells which edges are intersected by the isosurface; the intersection points (computed by linear interpolation) are connected into 0--4 triangles. Naively, 256 distinct cases — but exploiting symmetries reduces them: \textbf{complementary symmetry} (swap inside/outside) halves to 128, and \textbf{rotational symmetry} of the cube (24 rotations) plus reflections collapse equivalent topologies, yielding the classical \textbf{15 unique cases} (some references count 14 or 16). At runtime, the original 256-entry table is still used (no rotation needed per cube), but designers only had to manually enumerate 15 patterns. A subtlety: the original table has \textbf{ambiguous cases} where the chosen triangulation can produce holes between adjacent cubes; later variants (Asymptotic Decider, Marching Cubes 33) resolve this with extra topology checks.
+
+\switchcolumn
+
+\textbf{Câu 13. Marching Cubes — tại sao 256 case rút về 15?}\\
+\textbf{Marching Cubes} (Lorensen-Cline 1987) trích triangle mesh isosurface $f(x,y,z) = c$ từ trường scalar 3D sample trên grid đều. Với mỗi cube grid (8 góc), phân loại mỗi góc là \textbf{trong} ($f \le c$) hay \textbf{ngoài} ($f > c$), cho $2^8 = 256$ cấu hình. Với mỗi cấu hình, lookup table chỉ ra cạnh nào bị isosurface cắt; các giao điểm (tính bằng nội suy tuyến tính) được nối thành 0--4 tam giác. Naive: 256 case riêng — nhưng khai thác symmetry rút gọn: \textbf{complementary symmetry} (đổi trong/ngoài) giảm còn 128, và \textbf{rotational symmetry} của cube (24 phép quay) cộng phản chiếu hợp nhất topology tương đương, cho \textbf{15 case duy nhất} cổ điển (một số tài liệu đếm 14 hay 16). Lúc runtime, vẫn dùng table 256-entry gốc (không cần xoay từng cube), nhưng designer chỉ phải liệt kê 15 mẫu. Tinh tế: table gốc có \textbf{ambiguous case} mà tam giác hóa có thể sinh lỗ giữa cube kề; biến thể sau (Asymptotic Decider, Marching Cubes 33) giải quyết bằng kiểm tra topology bổ sung.
+
+\switchcolumn*
+
+\textbf{Q14. Describe greedy projection triangulation (PCL).}\\
+\textbf{Greedy Projection Triangulation} (Marton-Rusu-Beetz 2009, in PCL) reconstructs a mesh from an oriented point cloud by incrementally growing triangles in local tangent planes.
+\begin{enumerate}[leftmargin=*,nosep]
+\item \textbf{Setup:} build a kd-tree on $P$; for each point $p_i$ have a normal $\mathbf{n}_i$.
+\item Pick a seed point and project its $k$-nearest neighbors onto the tangent plane.
+\item Sort neighbors by polar angle around the seed; greedily form triangles from the seed to consecutive admissible neighbors.
+\item A neighbor is \textbf{admissible} if: distance $\le r_{\max}$, normal angle $\le \theta_{\max}$, the triangle does not violate visibility, and all candidate triangles obey a maximum allowed angle.
+\item Maintain a \textbf{front} of fringe edges; iteratively extend the front by adding new admissible triangles until no extension is possible.
+\end{enumerate}
+Parameters: search radius $r_{\max}$, max neighbors $k$, $\mu$ (relative density), maximum surface angle, and minimum/maximum triangle angles. The algorithm is fast ($O(N \log N)$), local, and parallelizable, but cannot recover topologically complex regions and requires consistent oriented normals.
+
+\switchcolumn
+
+\textbf{Câu 14. Mô tả greedy projection triangulation (PCL).}\\
+\textbf{Greedy Projection Triangulation} (Marton-Rusu-Beetz 2009, trong PCL) tái tạo mesh từ point cloud có normal bằng cách mọc tam giác từng bước trong tangent plane cục bộ.
+\begin{enumerate}[leftmargin=*,nosep]
+\item \textbf{Setup:} dựng kd-tree trên $P$; mỗi $p_i$ có normal $\mathbf{n}_i$.
+\item Chọn seed point và chiếu $k$-nearest neighbor lên tangent plane.
+\item Sắp neighbor theo polar angle quanh seed; greedy tạo tam giác từ seed đến các neighbor liên tiếp hợp lệ.
+\item Neighbor \textbf{hợp lệ} nếu: khoảng cách $\le r_{\max}$, góc normal $\le \theta_{\max}$, tam giác không vi phạm visibility, và mọi tam giác candidate tuân thủ góc tối đa.
+\item Duy trì \textbf{front} các fringe edge; mở rộng front bằng cách thêm tam giác hợp lệ đến khi không mở rộng được nữa.
+\end{enumerate}
+Tham số: search radius $r_{\max}$, max neighbor $k$, $\mu$ (mật độ tương đối), max surface angle, min/max triangle angle. Thuật toán nhanh ($O(N \log N)$), cục bộ, parallel được, nhưng không khôi phục được vùng topology phức tạp và cần normal có hướng nhất quán.
+
+\switchcolumn*
+
+\textbf{Q15. What are sliver triangles and why avoid them?}\\
+A \textbf{sliver triangle} is a triangle whose minimum angle is very small (typically $< 5^\circ$) — i.e., nearly degenerate, long and thin. In 3D meshing, slivers also include tetrahedra with small dihedral angles. Slivers are problematic because: (i) the \textbf{condition number} of FEM stiffness matrices grows like $1/\sin^2\theta_{\min}$, so slivers cause iterative solvers to converge slowly or diverge; (ii) gradient and Laplacian estimates on the mesh have error $O(1/\sin\theta_{\min})$, degrading downstream physics; (iii) numerical robustness of geometric predicates fails near degeneracy; (iv) \textbf{shading} interpolation produces visible bands and Mach-band artifacts; (v) \textbf{normal estimation} via cross product becomes unreliable, since the cross product magnitude vanishes; (vi) \textbf{collision detection} and ray-casting suffer from self-intersection false positives. Mitigation strategies: enforce Delaunay during construction; \textbf{edge flipping}, \textbf{edge collapsing}, and \textbf{vertex repositioning} during cleanup; use \textbf{centroidal Voronoi tessellation} (CVT) for isotropic remeshing; in 3D, use \textbf{sliver exudation} (Cheng-Dey) which perturbs vertex weights to remove slivers from weighted Delaunay tetrahedralizations.
+
+\switchcolumn
+
+\textbf{Câu 15. Sliver triangle là gì? Tại sao tránh?}\\
+\textbf{Sliver triangle} là tam giác có góc nhỏ nhất rất nhỏ (thường $< 5^\circ$) — gần suy biến, dài và mảnh. Trong meshing 3D, sliver còn gồm tetrahedron có dihedral angle nhỏ. Sliver có vấn đề vì: (i) \textbf{condition number} ma trận stiffness FEM tăng như $1/\sin^2\theta_{\min}$, nên sliver làm iterative solver hội tụ chậm hoặc phân kỳ; (ii) ước lượng gradient và Laplacian trên mesh có sai số $O(1/\sin\theta_{\min})$, suy giảm physics downstream; (iii) robustness số của geometric predicate hỏng gần suy biến; (iv) nội suy \textbf{shading} sinh dải và Mach-band artifact; (v) \textbf{ước lượng normal} bằng cross product không tin cậy vì magnitude triệt tiêu; (vi) \textbf{collision detection} và ray-casting bị self-intersection false positive. Biện pháp: enforce Delaunay khi xây; \textbf{edge flip}, \textbf{edge collapse}, \textbf{vertex reposition} khi cleanup; dùng \textbf{CVT} cho isotropic remeshing; trong 3D dùng \textbf{sliver exudation} (Cheng-Dey) — perturb vertex weight để loại sliver khỏi weighted Delaunay tetrahedralization.
+
+\switchcolumn*
+
+\textbf{Q16. Triangular mesh with many holes — how to reconstruct? General approach.}\\
+The general pipeline for repairing a holed mesh has four phases. (1) \textbf{Hole detection:} scan all edges, find boundary edges (those incident to exactly one face), and group them into closed loops via half-edge traversal. (2) \textbf{Hole classification:} compute hole size (perimeter, planarity, genus), distinguish small holes (handle with simple methods) from large holes (need geometry-aware methods); detect islands and multi-component holes. (3) \textbf{Patch generation:} for each hole loop, generate an initial triangulation — common methods are minimum-weight triangulation (Liepa), advancing front, or projection-based ear clipping. (4) \textbf{Quality refinement:} apply edge flips toward Delaunay, subdivide oversized triangles to match local mesh density, then \textbf{fair} the patch by minimizing curvature energy (membrane or thin-plate spline) so the patch blends smoothly. Optionally, normal-aware methods like \textbf{Normal Field Diffusion} replace plain fairing with PDE-based normal interpolation followed by displacement. The output should be \textbf{watertight}, 2-manifold, and visually continuous with the surrounding mesh.
+
+\switchcolumn
+
+\textbf{Câu 16. Mesh nhiều lỗ — làm sao tái tạo? Hướng tiếp cận chung.}\\
+Pipeline chung sửa mesh có lỗ gồm bốn pha. (1) \textbf{Phát hiện lỗ:} duyệt mọi cạnh, tìm boundary edge (kề đúng một face), gom thành chu trình đóng bằng half-edge traversal. (2) \textbf{Phân loại lỗ:} tính kích thước (perimeter, độ phẳng, genus), phân biệt lỗ nhỏ (xử lý đơn giản) vs lỗ lớn (cần phương pháp geometry-aware); phát hiện island và lỗ nhiều thành phần. (3) \textbf{Sinh patch:} cho mỗi loop, sinh tam giác hóa ban đầu — phổ biến là minimum-weight triangulation (Liepa), advancing front, hay ear clipping projection-based. (4) \textbf{Refine chất lượng:} flip cạnh hướng tới Delaunay, chia nhỏ tam giác quá lớn để khớp mật độ cục bộ, rồi \textbf{fair} patch bằng cách cực tiểu hóa năng lượng curvature (membrane hay thin-plate spline) để patch hòa mượt. Tùy chọn: phương pháp normal-aware như \textbf{Normal Field Diffusion} thay fairing thường bằng nội suy normal qua PDE rồi displacement. Output phải \textbf{watertight}, 2-manifold, và liên tục thị giác với mesh xung quanh.
+
+\switchcolumn*
+
+\textbf{Q17. How to detect a hole? What is a boundary loop and how to extract?}\\
+Hole detection on a triangle mesh exploits the \textbf{half-edge} (or directed edge) data structure. An edge is a \textbf{boundary edge} (border edge) if it is incident to exactly one face — equivalently, its half-edge has no twin/opposite. A \textbf{hole} is a maximal closed cycle of boundary edges, called a \textbf{boundary loop}. Extraction algorithm: (1) iterate all half-edges and collect those whose twin is null into a set $B$; (2) pick any edge in $B$, follow next-boundary pointers (the next half-edge around the same vertex with no twin) to walk along the loop until returning to the start; (3) mark the loop as visited and remove its edges from $B$; (4) repeat until $B$ is empty. The number of disjoint loops equals the number of holes. For a closed 2-manifold $|B| = 0$. Edge cases: \textbf{non-manifold edges} (incident to 3+ faces) require special handling; mesh with reversed face orientations may give incorrect loops, so one should first verify consistent orientation. Complexity is $O(E)$ — linear in edge count.
+
+\switchcolumn
+
+\textbf{Câu 17. Phát hiện lỗ thế nào? Boundary loop là gì và trích ra sao?}\\
+Phát hiện lỗ trên triangle mesh khai thác cấu trúc \textbf{half-edge} (hoặc directed edge). Cạnh là \textbf{boundary edge} (border edge) nếu kề đúng một face — tương đương half-edge không có twin/opposite. \textbf{Lỗ} là chu trình đóng cực đại của boundary edge, gọi là \textbf{boundary loop}. Thuật toán trích: (1) duyệt mọi half-edge, gom những cái twin null vào tập $B$; (2) chọn edge bất kỳ trong $B$, đi theo next-boundary pointer (half-edge kế tiếp quanh cùng vertex không có twin) men loop đến khi quay lại điểm xuất phát; (3) đánh dấu loop đã thăm và xóa edge khỏi $B$; (4) lặp đến khi $B$ rỗng. Số loop rời nhau = số lỗ. Mesh đóng 2-manifold: $|B| = 0$. Trường hợp đặc biệt: \textbf{non-manifold edge} (kề $\ge 3$ face) cần xử lý riêng; mesh có face hướng ngược có thể cho loop sai, nên xác minh hướng nhất quán trước. Độ phức tạp $O(E)$ — tuyến tính theo số cạnh.
+
+\switchcolumn*
+
+\textbf{Q18. Liepa's hole filling algorithm step-by-step (3 stages).}\\
+\textbf{Liepa 2003} is the canonical three-stage hole filling algorithm.
+\begin{enumerate}[leftmargin=*,nosep]
+\item \textbf{Stage 1 — Minimum-weight triangulation:} given the boundary loop $v_0,\dots,v_{n-1}$, fill it with $n-2$ triangles minimizing a weight functional (typically area + dihedral angle). Uses dynamic programming: let $W_{i,j}$ be the optimal weight for sub-polygon $v_i,\dots,v_j$; recurrence $W_{i,j} = \min_{i<k<j} \big(W_{i,k} + W_{k,j} + w(\Delta v_iv_kv_j)\big)$ in $O(n^3)$ time.
+\item \textbf{Stage 2 — Refinement:} subdivide patch triangles whose edge length exceeds the average length of their boundary neighbors; repeatedly split and edge-flip toward Delaunay until patch density matches surrounding mesh.
+\item \textbf{Stage 3 — Fairing:} solve for new interior vertex positions minimizing a smoothness energy (membrane $\Delta x = 0$ or thin-plate $\Delta^2 x = 0$) with Dirichlet boundary conditions fixed at the original loop. This is a sparse linear system using the cotangent Laplacian.
+\end{enumerate}
+Liepa is robust, parameter-free, and produces $C^0$/$C^1$-smooth patches, making it the default in tools like MeshLab.
+
+\switchcolumn
+
+\textbf{Câu 18. Thuật toán Liepa từng bước (3 giai đoạn).}\\
+\textbf{Liepa 2003} là thuật toán vá lỗ ba giai đoạn kinh điển.
+\begin{enumerate}[leftmargin=*,nosep]
+\item \textbf{GĐ 1 — Minimum-weight triangulation:} cho boundary loop $v_0,\dots,v_{n-1}$, lấp bằng $n-2$ tam giác tối thiểu hóa weight functional (thường là area + dihedral angle). Dùng DP: $W_{i,j}$ là weight tối ưu cho sub-polygon $v_i,\dots,v_j$; truy hồi $W_{i,j} = \min_{i<k<j} \big(W_{i,k} + W_{k,j} + w(\Delta v_iv_kv_j)\big)$ trong $O(n^3)$.
+\item \textbf{GĐ 2 — Refinement:} chia nhỏ tam giác patch có cạnh vượt trung bình cạnh boundary kế cận; lặp split và edge-flip hướng tới Delaunay đến khi mật độ patch khớp mesh xung quanh.
+\item \textbf{GĐ 3 — Fairing:} giải vị trí vertex nội bộ mới tối thiểu hóa năng lượng mượt (membrane $\Delta x = 0$ hoặc thin-plate $\Delta^2 x = 0$) với điều kiện biên Dirichlet cố định tại loop gốc. Hệ tuyến tính sparse dùng cotangent Laplacian.
+\end{enumerate}
+Liepa robust, không tham số, sinh patch $C^0$/$C^1$-mượt, là default trong MeshLab.
+
+\switchcolumn*
+
+\textbf{Q19. Minimum-weight triangulation in Liepa? What weights?}\\
+The \textbf{minimum-weight triangulation} (MWT) finds the triangulation of the polygon (boundary loop) that minimizes a sum of per-triangle weights. Liepa uses a 2-component weight: $w(\Delta) = (\mathrm{Area}(\Delta), \theta_{\max}(\Delta))$, compared lexicographically — minimize maximum dihedral angle first, ties broken by minimum total area. Why dihedral angle? In 3D the candidate triangles span a non-planar boundary, so penalizing high dihedral angles ensures the patch bends smoothly across triangle boundaries rather than creasing. Why area? Among smooth triangulations, smaller total area approximates the minimal surface (Plateau problem). The DP recurrence is:
+\[
+W_{i,j} = \min_{i<k<j} \Big(W_{i,k} + W_{k,j} + w(\triangle v_i v_k v_j)\Big)
+\]
+with base case $W_{i,i+1} = 0$ and $W_{i,i+2} = w(\triangle v_i v_{i+1} v_{i+2})$. Time complexity $O(n^3)$, space $O(n^2)$. Backtracking the optimal split indices recovers the triangulation. The dihedral term requires knowing neighboring triangles, so the actual algorithm is slightly more involved (caching adjacent face normals), but the structure remains DP over polygon intervals.
+
+\switchcolumn
+
+\textbf{Câu 19. Minimum-weight triangulation trong Liepa? Weight gì?}\\
+\textbf{Minimum-weight triangulation} (MWT) tìm triangulation của đa giác (boundary loop) tối thiểu hóa tổng weight per-triangle. Liepa dùng weight 2-thành-phần: $w(\Delta) = (\mathrm{Area}(\Delta), \theta_{\max}(\Delta))$, so sánh lexicographic — tối thiểu max dihedral angle trước, hòa thì lấy area nhỏ nhất. Tại sao dihedral? Trong 3D các tam giác candidate trải trên boundary không phẳng, phạt dihedral cao đảm bảo patch uốn mượt qua biên tam giác chứ không gấp khúc. Tại sao area? Trong các triangulation mượt, tổng area nhỏ xấp xỉ minimal surface (bài toán Plateau). Truy hồi DP:
+\[
+W_{i,j} = \min_{i<k<j} \Big(W_{i,k} + W_{k,j} + w(\triangle v_i v_k v_j)\Big)
+\]
+với base $W_{i,i+1} = 0$ và $W_{i,i+2} = w(\triangle v_i v_{i+1} v_{i+2})$. Độ phức tạp $O(n^3)$, không gian $O(n^2)$. Backtrack split index tối ưu cho triangulation. Term dihedral cần biết tam giác kề, nên thuật toán thực hơi phức tạp hơn (cache normal face kề), nhưng cấu trúc vẫn là DP trên interval đa giác.
+
+\switchcolumn*
+
+\textbf{Q20. What is mesh fairing? Which energies are minimized?}\\
+\textbf{Mesh fairing} is the process of smoothing a region of a mesh by minimizing a geometric energy functional, typically applied to hole patches or noisy regions. The goal is to produce a surface that is as ``visually pleasing'' as possible while respecting boundary constraints. Two main energies:
+\begin{itemize}[leftmargin=*,nosep]
+\item \textbf{Membrane energy} (Dirichlet): $E_m = \int \|\nabla x\|^2 \,dA$, minimized by solutions of Laplace's equation $\Delta x = 0$. Produces $C^0$ surfaces — minimal-area patches with sharp curvature transitions at the boundary.
+\item \textbf{Thin-plate energy} (bending): $E_b = \int \|\Delta x\|^2 \,dA$, minimized by bi-harmonic solutions $\Delta^2 x = 0$. Produces $C^1$ surfaces with smooth curvature blending — visually preferred but requires twice the boundary information (positions and normals).
+\end{itemize}
+Discretization uses the \textbf{cotangent Laplacian} $L_{ij} = \frac{1}{2}(\cot\alpha_{ij} + \cot\beta_{ij})$, leading to a sparse symmetric linear system $L x = b$ (membrane) or $L^2 x = b$ (thin-plate). Solve with Cholesky factorization. Drawback: fairing is purely \textbf{intrinsic} and does not propagate \textbf{external curvature trends}, which is why methods like Normal Field Diffusion are preferred for highly curved regions.
+
+\switchcolumn
+
+\textbf{Câu 20. Mesh fairing là gì? Năng lượng nào được tối thiểu hóa?}\\
+\textbf{Mesh fairing} là làm mượt một vùng mesh bằng cách cực tiểu hóa năng lượng hình học, thường áp dụng cho patch lỗ hoặc vùng noise. Mục tiêu: bề mặt ``đẹp mắt'' nhất có thể trong khi tôn trọng ràng buộc biên. Hai năng lượng chính:
+\begin{itemize}[leftmargin=*,nosep]
+\item \textbf{Membrane energy} (Dirichlet): $E_m = \int \|\nabla x\|^2 \,dA$, cực tiểu hóa bởi nghiệm Laplace $\Delta x = 0$. Sinh bề mặt $C^0$ — patch minimal-area với chuyển curvature sắc tại biên.
+\item \textbf{Thin-plate energy} (bending): $E_b = \int \|\Delta x\|^2 \,dA$, cực tiểu hóa bởi nghiệm bi-harmonic $\Delta^2 x = 0$. Sinh bề mặt $C^1$ với pha trộn curvature mượt — đẹp hơn nhưng cần gấp đôi thông tin biên (vị trí và normal).
+\end{itemize}
+Rời rạc hóa dùng \textbf{cotangent Laplacian} $L_{ij} = \frac{1}{2}(\cot\alpha_{ij} + \cot\beta_{ij})$, dẫn tới hệ tuyến tính sparse đối xứng $L x = b$ (membrane) hoặc $L^2 x = b$ (thin-plate). Giải bằng Cholesky factorization. Hạn chế: fairing thuần \textbf{intrinsic} và không lan tỏa \textbf{xu hướng curvature ngoài}, nên các phương pháp như Normal Field Diffusion ưu tiên cho vùng cong mạnh.
+
+\switchcolumn*
+
+\textbf{Q21. Compare Liepa vs RBF vs Poisson hole filling.}\\
+Three competing paradigms for hole filling: \textbf{Liepa} (combinatorial), \textbf{RBF} (radial basis function interpolation), and \textbf{Poisson} (PDE).
+\begin{itemize}[leftmargin=*,nosep]
+\item \textbf{Liepa:} purely intrinsic, uses only boundary loop. Fast, robust, parameter-free. Limitation: produces flat/membrane-like patches, ignores curvature outside the loop. Best for small holes in flat regions.
+\item \textbf{RBF (Carr et al. 2001):} fit a global implicit function $f(\mathbf{x}) = \sum_i w_i \phi(\|\mathbf{x}-c_i\|)$ to off-surface points (boundary $\pm$ normal), then extract surface via Marching Cubes. Smooth $C^\infty$ patch, naturally extends curvature. Limitation: dense linear system $O(N^3)$ solve unless using fast multipole; sensitive to noise; non-local — modifying one point affects entire mesh.
+\item \textbf{Poisson:} reformulates global reconstruction; if applied locally on a hole region with normals, fills smoothly. Handles large holes well. Limitation: oversmooths sharp features; needs careful boundary integration; modifies mesh outside the hole.
+\end{itemize}
+Rule of thumb: small flat hole $\to$ Liepa; medium curved hole, accurate normals $\to$ RBF; large hole on noisy scan $\to$ Poisson. Hybrid methods (Liepa skeleton + curvature-aware fairing like NFD) combine strengths.
+
+\switchcolumn
+
+\textbf{Câu 21. So sánh Liepa vs RBF vs Poisson vá lỗ.}\\
+Ba mô hình vá lỗ cạnh tranh: \textbf{Liepa} (tổ hợp), \textbf{RBF} (nội suy radial basis function), \textbf{Poisson} (PDE).
+\begin{itemize}[leftmargin=*,nosep]
+\item \textbf{Liepa:} thuần intrinsic, chỉ dùng boundary loop. Nhanh, robust, không tham số. Hạn chế: patch phẳng/membrane, bỏ qua curvature ngoài loop. Tốt cho lỗ nhỏ vùng phẳng.
+\item \textbf{RBF (Carr 2001):} fit hàm implicit toàn cục $f(\mathbf{x}) = \sum_i w_i \phi(\|\mathbf{x}-c_i\|)$ qua off-surface point (boundary $\pm$ normal), rồi trích bề mặt qua Marching Cubes. Patch $C^\infty$ mượt, tự nhiên mở rộng curvature. Hạn chế: hệ dense $O(N^3)$ trừ khi dùng fast multipole; nhạy noise; non-local — sửa 1 điểm ảnh hưởng toàn mesh.
+\item \textbf{Poisson:} công thức hóa reconstruction toàn cục; áp dụng cục bộ trên vùng lỗ có normal, lấp mượt. Xử lý lỗ lớn tốt. Hạn chế: oversmooth feature sắc; cần xử lý biên cẩn thận; sửa cả mesh ngoài lỗ.
+\end{itemize}
+Quy tắc: lỗ phẳng nhỏ $\to$ Liepa; lỗ cong vừa, normal chính xác $\to$ RBF; lỗ lớn scan noisy $\to$ Poisson. Phương pháp lai (Liepa skeleton + curvature-aware fairing như NFD) kết hợp ưu điểm.
+
+\switchcolumn*
+
+\textbf{Q22. Describe the Normal Field Diffusion (NFD) hole filling method.}\\
+\textbf{Normal Field Diffusion} (the user's MeshLab plugin project) is a curvature-aware hole filling method that replaces plain position fairing with PDE-based normal interpolation. The seven-stage pipeline:
+\begin{enumerate}[leftmargin=*,nosep]
+\item \textbf{Boundary extraction:} detect hole loops via half-edge boundary traversal.
+\item \textbf{Initial triangulation:} fill each loop with ear clipping using a \textbf{best-ear} (max-min interior angle) criterion to avoid the fan-from-pivot artifact.
+\item \textbf{Delaunay edge flipping:} improve patch quality by Lawson flips toward the projected Delaunay condition.
+\item \textbf{Refinement:} subdivide oversized triangles to match local mesh density (target edge length from boundary average).
+\item \textbf{Normal field diffusion:} treat the three components of the normal as scalar fields on the patch; solve the heat equation $\partial \mathbf{n}/\partial t = \Delta \mathbf{n}$ with Dirichlet boundary (boundary normals fixed) using \textbf{implicit Euler} with cotangent Laplacian and SimplicialLDLT factorization.
+\item \textbf{Spherical-cap displacement:} push interior vertices along the diffused normal field with amplitude derived from intrinsic geometry (mean radius $r$, mean angle $\theta$); weighting profile $w(t) = \sqrt{2t - t^2}$ for $C^1$ continuity at the boundary.
+\item \textbf{Taubin smoothing:} non-shrinking low-pass filter to remove high-frequency noise from interpolation.
+\end{enumerate}
+Quantitative validation via symmetric Hausdorff distance achieved $0.12\%$ of bounding-box diagonal on Stanford Bunny.
+
+\switchcolumn
+
+\textbf{Câu 22. Mô tả phương pháp Normal Field Diffusion (NFD).}\\
+\textbf{Normal Field Diffusion} (project MeshLab plugin của user) là phương pháp vá lỗ curvature-aware thay fairing vị trí thường bằng nội suy normal dựa PDE. Pipeline 7 giai đoạn:
+\begin{enumerate}[leftmargin=*,nosep]
+\item \textbf{Trích boundary:} phát hiện loop lỗ qua half-edge boundary traversal.
+\item \textbf{Tam giác hóa ban đầu:} lấp mỗi loop bằng ear clipping với tiêu chí \textbf{best-ear} (max-min interior angle) tránh artifact fan-from-pivot.
+\item \textbf{Delaunay edge flip:} cải thiện chất lượng patch bằng Lawson flip hướng tới điều kiện Delaunay chiếu.
+\item \textbf{Refinement:} chia nhỏ tam giác lớn để khớp mật độ mesh (target edge length từ trung bình boundary).
+\item \textbf{Normal field diffusion:} coi ba thành phần normal là trường vô hướng trên patch; giải heat equation $\partial \mathbf{n}/\partial t = \Delta \mathbf{n}$ với Dirichlet boundary (normal biên cố định) bằng \textbf{implicit Euler} với cotangent Laplacian và SimplicialLDLT factorization.
+\item \textbf{Spherical-cap displacement:} đẩy vertex nội bộ dọc trường normal khuếch tán với biên độ suy từ intrinsic geometry (mean radius $r$, mean angle $\theta$); profile weight $w(t) = \sqrt{2t - t^2}$ đảm bảo $C^1$ tại biên.
+\item \textbf{Taubin smoothing:} bộ lọc low-pass không co rút để khử noise cao tần từ nội suy.
+\end{enumerate}
+Đánh giá định lượng bằng symmetric Hausdorff distance đạt $0.12\%$ bounding-box diagonal trên Stanford Bunny.
+
+\switchcolumn*
+
+\textbf{Q23. Difference between hole filling and mesh repair?}\\
+\textbf{Hole filling} is a specific subtask within the broader category of \textbf{mesh repair}. Mesh repair encompasses all operations to convert a defective mesh into a clean, watertight, 2-manifold representation. Defects include: \textbf{holes} (open boundaries), \textbf{non-manifold edges} (incident to 3+ faces), \textbf{non-manifold vertices} (umbrella structure violated), \textbf{self-intersections} (faces that geometrically cross), \textbf{inverted normals} (inconsistent orientation), \textbf{duplicate vertices} (cracks), \textbf{degenerate triangles} (zero area), and \textbf{floating components} (disconnected debris). A typical mesh repair pipeline first \textbf{merges duplicate vertices}, \textbf{removes degenerate faces}, \textbf{splits non-manifold edges}, \textbf{resolves self-intersections}, \textbf{fixes orientation}, and \textbf{fills holes} as a final step. So hole filling assumes the mesh is otherwise topologically clean — applying it on a non-manifold mesh produces undefined behavior. Tools like MeshLab, Meshmixer, and Netfabb provide separate filters for each repair step. Confusion arises because some commercial tools market ``mesh repair'' but actually perform only hole filling.
+
+\switchcolumn
+
+\textbf{Câu 23. Khác nhau giữa hole filling và mesh repair?}\\
+\textbf{Hole filling} là một subtask cụ thể trong phạm trù rộng hơn \textbf{mesh repair}. Mesh repair bao gồm mọi thao tác chuyển mesh khiếm khuyết thành biểu diễn sạch, watertight, 2-manifold. Khiếm khuyết gồm: \textbf{lỗ} (open boundary), \textbf{non-manifold edge} (kề $\ge 3$ face), \textbf{non-manifold vertex} (vi phạm cấu trúc umbrella), \textbf{self-intersection} (face cắt nhau hình học), \textbf{inverted normal} (orientation không nhất quán), \textbf{duplicate vertex} (crack), \textbf{degenerate triangle} (area = 0), và \textbf{floating component} (mảnh rời rạc). Pipeline mesh repair điển hình: \textbf{merge duplicate vertex} trước, \textbf{xóa degenerate face}, \textbf{tách non-manifold edge}, \textbf{giải self-intersection}, \textbf{sửa orientation}, rồi \textbf{vá lỗ} bước cuối. Vì vậy hole filling giả định mesh đã sạch topology — áp dụng trên mesh non-manifold cho hành vi không xác định. Công cụ như MeshLab, Meshmixer, Netfabb cung cấp filter riêng cho từng bước. Nhầm lẫn nảy sinh vì một số tool thương mại quảng bá ``mesh repair'' nhưng thực ra chỉ làm hole filling.
+
+\switchcolumn*
+
+\textbf{Q24. How to handle complex hole topology (multiple components, islands)?}\\
+Complex hole topologies arise when scanning concave or perforated objects. Three sub-cases: (i) \textbf{Multiple disjoint holes:} simple — extract each boundary loop independently and fill them separately. The half-edge traversal naturally produces one loop per component. (ii) \textbf{Holes with islands} (a hole containing a separate boundary loop, like a donut hole inside a larger hole): the outer loop and each inner loop must be filled \emph{jointly}, otherwise topology is wrong. Standard Liepa cannot handle this; one must use \textbf{multi-loop triangulation}, e.g., constrained Delaunay on the projected planar layout with all loops as constraints, or a \textbf{tube/bridge} approach connecting loops first then filling. (iii) \textbf{Genus-changing repairs:} sometimes topology should change (close a handle as a hole, or open a closed region). This requires user input — automatic methods cannot guess intent. Practical workflow: detect all loops; classify by enclosure tests; build a hierarchy; for each \textbf{outer-with-islands} hole, use planar CDT or volumetric approaches like Poisson restricted to the hole's bounding region. Robust libraries: CGAL polygon\_mesh\_processing::triangulate\_hole accepts island input.
+
+\switchcolumn
+
+\textbf{Câu 24. Xử lý topology lỗ phức tạp (nhiều thành phần, island)?}\\
+Topology lỗ phức tạp nảy sinh khi scan vật lõm hoặc thủng. Ba sub-case: (i) \textbf{Nhiều lỗ rời:} đơn giản — trích từng boundary loop độc lập và vá riêng. Half-edge traversal tự nhiên cho một loop mỗi thành phần. (ii) \textbf{Lỗ có island} (lỗ chứa boundary loop khác bên trong, như lỗ donut trong lỗ lớn): outer loop và mỗi inner loop phải vá \emph{đồng thời}, nếu không topology sai. Liepa chuẩn không xử lý được; phải dùng \textbf{multi-loop triangulation}, vd: constrained Delaunay trên layout phẳng chiếu với mọi loop là constraint, hoặc cách \textbf{tube/bridge} nối loop trước rồi vá. (iii) \textbf{Sửa đổi genus:} đôi khi topology cần đổi (đóng handle như lỗ, hoặc mở vùng đóng). Cần user input — phương pháp tự động không đoán được ý định. Workflow thực tế: phát hiện mọi loop; phân loại theo enclosure test; xây cây phân cấp; với mỗi lỗ \textbf{outer-with-islands}, dùng CDT phẳng hoặc Poisson hạn chế trong bounding region của lỗ. Thư viện robust: CGAL polygon\_mesh\_processing::triangulate\_hole nhận island input.
+
+\switchcolumn*
+
+\textbf{Q25. Quality criteria for a hole-filled patch?}\\
+Patch quality is evaluated along five axes:
+\begin{enumerate}[leftmargin=*,nosep]
+\item \textbf{Topology:} the patch must close the loop and yield a 2-manifold (no non-manifold edges, no self-intersections within or with the surrounding mesh).
+\item \textbf{$C^0$ continuity (positional):} patch vertices on the boundary coincide exactly with the original loop. Trivially satisfied by construction.
+\item \textbf{$C^1$ continuity (tangent):} normals across the patch-host boundary match — no visible crease. Measured by dihedral angle deviation between adjacent triangles across the seam, ideally $< 5^\circ$.
+\item \textbf{$C^2$ continuity (curvature):} principal curvatures vary smoothly across the seam — no curvature discontinuity. Hard to enforce; achieved approximately by NFD or thin-plate fairing.
+\item \textbf{Triangle quality:} aspect ratios $> 0.3$, minimum angles $> 20^\circ$, edge length matching local mesh density.
+\end{enumerate}
+Quantitative metrics: \textbf{symmetric Hausdorff distance} from patch to ground-truth surface (when known); \textbf{mean curvature deviation} along the boundary; \textbf{visual inspection} via reflection-line shading which exposes $C^1$ defects strongly. The NFD project reports Hausdorff $0.12\%$ on bunny, illustrating quantitative reporting standard.
+
+\switchcolumn
+
+\textbf{Câu 25. Tiêu chí chất lượng patch vá?}\\
+Chất lượng patch đánh giá theo năm trục:
+\begin{enumerate}[leftmargin=*,nosep]
+\item \textbf{Topology:} patch phải đóng loop và sinh 2-manifold (không non-manifold edge, không self-intersection trong patch hay với mesh xung quanh).
+\item \textbf{Liên tục $C^0$ (vị trí):} vertex patch trên biên trùng chính xác với loop gốc. Tự thỏa do cách xây.
+\item \textbf{Liên tục $C^1$ (tangent):} normal qua biên patch-host khớp — không gấp khúc thị giác. Đo bằng độ lệch dihedral angle giữa tam giác kề qua đường khâu, lý tưởng $< 5^\circ$.
+\item \textbf{Liên tục $C^2$ (curvature):} principal curvature biến thiên mượt qua đường khâu — không gián đoạn curvature. Khó ép buộc; xấp xỉ qua NFD hoặc thin-plate fairing.
+\item \textbf{Chất lượng tam giác:} aspect ratio $> 0.3$, góc nhỏ nhất $> 20^\circ$, edge length khớp mật độ mesh cục bộ.
+\end{enumerate}
+Metric định lượng: \textbf{symmetric Hausdorff distance} từ patch tới ground-truth (nếu biết); \textbf{độ lệch curvature trung bình} dọc biên; \textbf{kiểm tra thị giác} bằng reflection-line shading — bộc lộ defect $C^1$ mạnh. Project NFD báo cáo Hausdorff $0.12\%$ trên bunny, minh họa chuẩn báo cáo định lượng.
+
+\switchcolumn*
+
+\textbf{Q26. How is hole filling used in 3D scanning workflows?}\\
+3D scanning produces incomplete meshes due to \textbf{self-occlusion}, sensor dropout, and surface properties (specular, transparent, dark). A typical scanning pipeline is \textbf{capture $\to$ register $\to$ fuse $\to$ repair $\to$ deliver}. Hole filling is essential at the repair stage: structured-light scans (Artec, EinScan) leave holes wherever the projected pattern was occluded; LiDAR misses surfaces normal-aligned with the beam; photogrammetry (RealityCapture, Metashape) leaves holes in textureless regions. Operators use hole filling to: (i) produce a watertight mesh required by 3D-printing slicers; (ii) generate clean models for VR/AR display; (iii) enable volumetric measurements (mass, area) which require closed surfaces; (iv) prepare reference geometry for inspection. Best practice: distinguish \textbf{intentional} openings (e.g., the inside of a vase) from \textbf{scan defects} — do not auto-fill openings smaller than scanner accuracy thresholds. Tools like Geomagic Wrap, RevoScan, and MeshLab provide ``small hole'' auto-fill plus manual selection for large holes. Curvature-aware methods (NFD, Poisson) are critical for cultural heritage and medical scans where shape fidelity matters.
+
+\switchcolumn
+
+\textbf{Câu 26. Hole filling dùng thế nào trong workflow scan 3D?}\\
+Scan 3D sinh mesh khuyết do \textbf{self-occlusion}, sensor dropout, và đặc tính bề mặt (specular, trong suốt, đen). Pipeline scan điển hình: \textbf{capture $\to$ register $\to$ fuse $\to$ repair $\to$ deliver}. Vá lỗ thiết yếu ở pha repair: structured-light scan (Artec, EinScan) để lại lỗ ở vùng pattern bị che; LiDAR sót bề mặt vuông góc tia; photogrammetry (RealityCapture, Metashape) để lại lỗ vùng không texture. Operator dùng vá lỗ để: (i) sinh mesh watertight cho slicer in 3D; (ii) sinh model sạch cho VR/AR; (iii) cho đo lường thể tích (khối lượng, diện tích) cần bề mặt đóng; (iv) chuẩn bị reference geometry cho inspection. Best practice: phân biệt mở \textbf{cố ý} (ví dụ trong lòng bình) với \textbf{scan defect} — không auto-fill mở nhỏ hơn ngưỡng độ chính xác scanner. Công cụ như Geomagic Wrap, RevoScan, MeshLab cung cấp auto-fill ``lỗ nhỏ'' cộng manual cho lỗ lớn. Phương pháp curvature-aware (NFD, Poisson) thiết yếu cho di sản văn hóa và scan y tế nơi shape fidelity quan trọng.
+
+\switchcolumn*
+
+\textbf{Q27. How is triangulation used in GIS / terrain modeling?}\\
+In Geographic Information Systems, terrains are commonly represented as a \textbf{Triangulated Irregular Network} (TIN), a triangulated 2.5D surface where elevation $z$ is a function of $(x,y)$. TINs are constructed by 2D Delaunay triangulation of survey points (LiDAR, photogrammetric, or manual). Compared to regular grids (DEMs), TINs adaptively concentrate vertices in high-relief areas and use few vertices in flat areas, achieving better compression for the same accuracy. \textbf{Constrained Delaunay} is essential because GIS data has natural \textbf{breaklines} — rivers, ridges, road centerlines, building footprints — that must appear as edges in the triangulation. Applications include: (i) hydrological flow modeling (D8/D-Infinity algorithms compute flow direction per triangle); (ii) viewshed analysis (visibility from a tower); (iii) cut-and-fill calculations for civil engineering; (iv) contour generation by intersecting triangles with horizontal planes; (v) 3D city models (CityGML LOD1-2). Robust triangulation matters because GIS coordinates have huge dynamic range (UTM meters vs centimeter accuracy); exact predicates are mandatory.
+
+\switchcolumn
+
+\textbf{Câu 27. Tam giác hóa dùng thế nào trong GIS / mô hình địa hình?}\\
+Trong GIS, địa hình thường biểu diễn bằng \textbf{Triangulated Irregular Network} (TIN) — bề mặt 2.5D tam giác hóa, độ cao $z$ là hàm của $(x,y)$. TIN xây bằng Delaunay 2D trên survey point (LiDAR, photogrammetry, hoặc đo thủ công). So với grid đều (DEM), TIN tập trung vertex thích nghi ở vùng địa hình mạnh và dùng ít vertex ở vùng phẳng, nén tốt hơn cùng độ chính xác. \textbf{Constrained Delaunay} thiết yếu vì dữ liệu GIS có \textbf{breakline} tự nhiên — sông, sống núi, centerline đường, footprint nhà — phải xuất hiện là cạnh trong triangulation. Ứng dụng: (i) mô hình thủy văn (thuật toán D8/D-Infinity tính hướng dòng chảy mỗi tam giác); (ii) viewshed analysis (visibility từ tháp); (iii) tính cut-and-fill xây dựng dân dụng; (iv) sinh contour bằng giao tam giác với mặt phẳng ngang; (v) mô hình thành phố 3D (CityGML LOD1-2). Triangulation robust quan trọng vì tọa độ GIS có dynamic range lớn (UTM mét vs độ chính xác cm); exact predicate bắt buộc.
+
+\switchcolumn*
+
+\textbf{Q28. How is geometric modeling used in cultural heritage preservation?}\\
+\textbf{Digital cultural heritage} preservation creates 3D archives of monuments, artifacts, and historic sites that may be lost to weathering, conflict, or accident — exemplified by the Notre-Dame of Paris fire (2019) where pre-fire scan data informed reconstruction. Pipelines combine \textbf{photogrammetry} (Agisoft Metashape, RealityCapture), \textbf{laser scanning} (FARO, Leica), and \textbf{structured light} (Artec). Triangulation reconstructs surface meshes at sub-millimeter accuracy. Hole filling is critical because: artifacts have hollow interiors (vases, statues with cavities), bronze surfaces are specular, ancient stone has cracks. Curvature-aware methods (NFD, Poisson) are preferred because cultural items have rich detail that must blend naturally — flat patches look obviously synthetic. Standards include the \textbf{CIDOC CRM} ontology for metadata and \textbf{IIIF 3D} for delivery. Notable projects: CyArk's monument database, the Smithsonian's open 3D archive, ScanPyramids for the Great Pyramid. The course's My Son temple practical falls in this category — Vietnam's UNESCO heritage with significant hole-filling needs due to weathering of the Cham brick towers.
+
+\switchcolumn
+
+\textbf{Câu 28. Mô hình hình học dùng thế nào trong bảo tồn di sản văn hóa?}\\
+Bảo tồn \textbf{di sản văn hóa số} tạo lưu trữ 3D di tích, hiện vật, địa điểm có thể mất do thời tiết, xung đột, tai nạn — ví dụ vụ cháy Notre-Dame Paris (2019) nơi dữ liệu scan trước cháy phục vụ tái tạo. Pipeline kết hợp \textbf{photogrammetry} (Agisoft Metashape, RealityCapture), \textbf{laser scanning} (FARO, Leica), và \textbf{structured light} (Artec). Tam giác hóa tái tạo mesh bề mặt ở độ chính xác sub-millimeter. Vá lỗ thiết yếu vì: hiện vật có lòng rỗng (bình, tượng có khoang), bề mặt đồng phản chiếu, đá cổ có nứt. Phương pháp curvature-aware (NFD, Poisson) ưu tiên vì hiện vật văn hóa có chi tiết phong phú phải hòa tự nhiên — patch phẳng nhìn rõ là nhân tạo. Chuẩn gồm ontology \textbf{CIDOC CRM} cho metadata và \textbf{IIIF 3D} cho delivery. Project nổi bật: CyArk monument database, Smithsonian open 3D archive, ScanPyramids. Bài thực hành My Sơn của môn thuộc loại này — di sản UNESCO Việt Nam với nhu cầu vá lỗ đáng kể do phong hóa các tháp Chăm.
+
+\switchcolumn*
+
+\textbf{Q29. Why is robust triangulation important for medical 3D printing?}\\
+Medical 3D printing — patient-specific anatomical models, surgical guides, prosthetics, implants — requires \textbf{watertight, manifold meshes} or the slicer fails. Source data comes from \textbf{CT/MRI segmentation}: voxel volumes are converted to surfaces via Marching Cubes, producing meshes with stair-step artifacts, isolated components, non-manifold edges where thin tissue meets, and small holes from low-contrast regions. Robust triangulation matters because: (i) printer slicers (Cura, PrusaSlicer, GE Healthcare) reject non-manifold input or silently produce wrong toolpaths; (ii) FDA-cleared workflows for surgical guides require validated geometry; (iii) implants must satisfy dimensional tolerances within $\pm 0.1$ mm; (iv) finite-element simulation for stress analysis demands quality tetrahedral meshes derived from clean surface meshes. Hole filling is sensitive: oversmoothing in cardiac models can erase important features (chordae tendineae); under-filling leaves printable but inaccurate models. Curvature-aware methods (NFD, MAT-based) are preferred. Vendors like Materialise Mimics integrate sophisticated repair pipelines specifically tuned for medical workflows.
+
+\switchcolumn
+
+\textbf{Câu 29. Tại sao tam giác hóa robust quan trọng cho in 3D y tế?}\\
+In 3D y tế — model giải phẫu patient-specific, surgical guide, prosthetic, implant — đòi hỏi \textbf{mesh watertight, manifold} nếu không slicer hỏng. Dữ liệu nguồn từ \textbf{phân đoạn CT/MRI}: volume voxel chuyển thành bề mặt qua Marching Cubes, sinh mesh có stair-step artifact, isolated component, non-manifold edge nơi mô mỏng tiếp xúc, và lỗ nhỏ từ vùng low-contrast. Triangulation robust quan trọng vì: (i) slicer máy in (Cura, PrusaSlicer, GE Healthcare) từ chối input non-manifold hoặc lặng lẽ sinh toolpath sai; (ii) workflow FDA-cleared cho surgical guide đòi hỏi geometry validated; (iii) implant phải thỏa dung sai $\pm 0.1$ mm; (iv) FEM simulation phân tích ứng suất cần tetrahedral mesh chất lượng từ surface mesh sạch. Vá lỗ nhạy: oversmoothing trong model tim có thể xóa feature quan trọng (chordae tendineae); under-fill cho model in được nhưng không chính xác. Phương pháp curvature-aware (NFD, MAT-based) ưu tiên. Hãng như Materialise Mimics tích hợp pipeline repair tinh vi tinh chỉnh cho workflow y tế.
+
+\switchcolumn*
+
+\textbf{Q30. How does triangulation affect downstream FEM simulation quality?}\\
+\textbf{Finite Element Method} (FEM) discretizes continuous PDEs (elasticity, heat, fluid flow) on a mesh. Triangulation quality directly governs solution accuracy and solver performance through three mechanisms: (1) \textbf{Discretization error} — convergence rates assume non-degenerate elements. Standard linear elements have error $O(h)$ where $h$ is element diameter, but the constant blows up as $1/\sin\theta_{\min}$ for slivers, so a single bad element can dominate global error. (2) \textbf{Conditioning} — the FEM stiffness matrix has condition number $\kappa \sim h^{-2}/\sin^2\theta_{\min}$. Iterative solvers (CG, GMRES) require iteration count proportional to $\sqrt{\kappa}$, so slivers cause dramatic slowdowns. (3) \textbf{Locking} — isotropic deformation modes are spuriously stiff in poor meshes, requiring higher-order elements or special formulations. Best practices: use \textbf{Delaunay} or \textbf{centroidal Voronoi} meshing; enforce \textbf{minimum angle $> 20^\circ$} (2D) or \textbf{dihedral $> 15^\circ$} (3D); apply \textbf{adaptive refinement} guided by error estimators; \textbf{anisotropic meshing} for boundary layers. Tools like \texttt{TetGen}, \texttt{Gmsh}, \texttt{Netgen} provide quality-guaranteed mesh generation.
+
+\switchcolumn
+
+\textbf{Câu 30. Tam giác hóa ảnh hưởng chất lượng simulation FEM thế nào?}\\
+\textbf{Finite Element Method} (FEM) rời rạc hóa PDE liên tục (đàn hồi, nhiệt, lưu chất) trên mesh. Chất lượng tam giác hóa quyết định trực tiếp độ chính xác nghiệm và hiệu năng solver qua ba cơ chế: (1) \textbf{Sai số rời rạc} — tốc độ hội tụ giả định element không suy biến. Element tuyến tính chuẩn có sai số $O(h)$ với $h$ là đường kính element, nhưng hằng số bùng nổ như $1/\sin\theta_{\min}$ cho sliver, nên một element xấu có thể chi phối sai số toàn cục. (2) \textbf{Điều kiện số} — ma trận stiffness FEM có condition number $\kappa \sim h^{-2}/\sin^2\theta_{\min}$. Iterative solver (CG, GMRES) cần số lần lặp tỉ lệ $\sqrt{\kappa}$, nên sliver gây chậm dramatic. (3) \textbf{Locking} — mode biến dạng đẳng hướng cứng giả tạo trong mesh kém, đòi element bậc cao hoặc formulation đặc biệt. Best practice: dùng meshing \textbf{Delaunay} hoặc \textbf{centroidal Voronoi}; ép \textbf{góc nhỏ nhất $> 20^\circ$} (2D) hoặc \textbf{dihedral $> 15^\circ$} (3D); áp dụng \textbf{refinement thích nghi} hướng dẫn bởi error estimator; \textbf{anisotropic meshing} cho boundary layer. Công cụ như \texttt{TetGen}, \texttt{Gmsh}, \texttt{Netgen} cung cấp mesh generation đảm bảo chất lượng.
+
+\end{paracol}
