@@ -1,0 +1,220 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage[top=2.5cm, bottom=2cm, left=3cm, right=2cm]{geometry}
+\usepackage{lmodern}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\usepackage{biblatex}
+\usepackage[colorlinks=true, linkcolor=black, citecolor=blue, urlcolor=blue]{hyperref}
+\usepackage{etoolbox}
+\usepackage{titlesec}
+\addbibresource{references.bib}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{tocloft}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{pifont}
+\usepackage{microtype}
+\emergencystretch=3em
+\hyphenation{Sim-pli-cial-LDLT Per-Ver-tex-Norm-al-ized-Per-Face Per-Face-Norm-al-ized}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{arrows.meta, positioning, calc, shapes.geometric,
+                decorations.pathmorphing, decorations.markings,
+                patterns, fit, backgrounds, 3d, shadings}
+
+% Reduce heading leading skip
+\setlength{\cftbeforetoctitleskip}{0cm}
+\setlength{\cftbeforeloftitleskip}{0cm}
+\setlength{\cftbeforelottitleskip}{0cm}
+
+\titlespacing*{\chapter}{0pt}{0cm}{1cm}
+
+\definecolor{ackblue}{HTML}{365f91}
+\DefineBibliographyStrings{english}{%
+  bibliography = {REFERENCES},
+}
+
+\makeatletter
+\renewcommand{\listfigurename}{\textcolor{ackblue}{\Large \textbf{LIST OF FIGURES}}}
+\renewcommand{\listtablename}{\textcolor{ackblue}{\Large \textbf{LIST OF TABLES}}}
+\renewcommand{\contentsname}{\textcolor{ackblue}{\Large \textbf{TABLE OF CONTENTS}}}
+\makeatother
+
+\newcommand{\CustomChapter}[1]{%
+  \clearpage
+  \vspace*{0cm}
+  \begin{center}
+    \textcolor{ackblue}{\Large \textbf{#1}}
+  \end{center}
+  \vspace{1cm}
+}
+
+% Listings style for C++ code snippets
+\lstdefinestyle{cppstyle}{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{red!60!black},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=6pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{black!30},
+    tabsize=2,
+    language=C++
+}
+\lstset{style=cppstyle}
+
+\pagestyle{plain}
+
+\begin{document}
+\onehalfspacing
+
+% ---------------- Page 1 (Cover) ----------------
+\begin{titlepage}
+    \thispagestyle{empty}
+    \centering
+    \textbf{VIETNAM NATIONAL UNIVERSITY OF HOCHIMINH CITY} \\
+    \textbf{THE INTERNATIONAL UNIVERSITY} \\
+    \textbf{SCHOOL OF COMPUTER SCIENCE AND ENGINEERING} \\
+    \vspace{1cm}
+
+    \includegraphics[width=0.3\textwidth]{images/logo-vector-IU-01.png} \\
+
+    \vspace{1cm}
+    \Large
+    \textbf{NORMAL FIELD DIFFUSION FOR GEOMETRY-AWARE HOLE FILLING IN 3D TRIANGLE MESHES:\\ A MESHLAB PLUGIN IMPLEMENTATION} \\
+    \vspace{0.5cm}
+    \vspace{1.5cm}
+
+    \normalsize
+    By \\
+    \textbf{Truong Tri Dung} \\
+    \textbf{MITIU25208} \\
+
+    \vfill
+
+    \begin{singlespace}
+    A project report submitted to the School of Computer Science and Engineering \\
+    in partial fulfillment of the requirements for the course \\
+    Advanced Computer Graphics
+    \end{singlespace}
+
+    \vspace{1cm}
+    \textbf{Ho Chi Minh City, Vietnam} \\
+    Year 2026 \\
+
+\end{titlepage}
+
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{2}
+
+% ---------------- TABLE OF CONTENTS ----------------
+\newpage
+\phantomsection
+\addcontentsline{toc}{chapter}{TABLE OF CONTENTS}
+\begingroup
+\let\addcontentsline\relax
+\tableofcontents
+\endgroup
+
+% ---------------- LIST OF FIGURES ----------------
+\newpage
+\phantomsection
+\addcontentsline{toc}{chapter}{LIST OF FIGURES}
+\listoffigures
+
+% ---------------- LIST OF TABLES ----------------
+\newpage
+\phantomsection
+\addcontentsline{toc}{chapter}{LIST OF TABLES}
+\listoftables
+
+% ---------------- ABSTRACT ----------------
+\newpage
+\CustomChapter{ABSTRACT}
+\addcontentsline{toc}{chapter}{ABSTRACT}
+
+Triangle meshes from scan or reconstruction pipelines often contain holes, and most existing fillers produce visibly flat patches because they triangulate the boundary in a plane. This report describes a MeshLab plugin implementing \emph{Normal Field Diffusion} (NFD), which gives the patch its curvature in two stages. The boundary vertex normals are treated as Dirichlet data and diffused across the patch interior using the heat equation. Each interior vertex is then displaced along its diffused normal by an amount derived from a spherical-cap fit to the boundary. Implicit Euler with a one-time Cholesky factorisation keeps the inner solver stable and inexpensive. On six ground-truth meshes (spheres, cylinder, torus, Stanford Bunny, cow), the symmetric Hausdorff error reaches 0.12\% on the simplest case and is roughly $2$--$4\times$ smaller than MeshLab's built-in \texttt{Close Holes} filter on curved surfaces.
+
+\vspace{0.4cm}
+\noindent\textbf{Keywords:} hole filling, mesh repair, cotangent Laplacian, heat equation, MeshLab.
+
+%
+\input{chapters/introduction}
+\input{chapters/related_work}
+\input{chapters/preliminaries}
+\input{chapters/methodology}
+\input{chapters/implementation}
+\input{chapters/results}
+\input{chapters/discussion}
+\input{chapters/conclusion}
+
+%
+\newpage
+\chapter*{\begin{center}{\Large \textbf{REFERENCES}}\end{center}}
+\addcontentsline{toc}{chapter}{REFERENCES}
+\printbibliography[heading=none]
+
+% ---------------- APPENDIX ----------------
+\newpage
+\CustomChapter{APPENDIX}
+\addcontentsline{toc}{chapter}{APPENDIX}
+
+\section*{A. Build environment}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+CPU / RAM & Intel Core i7-12700H / 16 GB DDR5 \\
+OS / Compiler & Windows 11 / MSVC 19.41 (VS 2022) \\
+Build & CMake 3.28 + Ninja \\
+Qt / VCGlib / Eigen & 5.15.2 / MeshLab sub-module / 3.4 \\
+Host & MeshLab 2023.12, built from source \\
+Eval filter & Filters \textgreater{} Sampling \textgreater{} Hausdorff Distance \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section*{B. Notation}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+$\mathcal{M} = (V, F)$ & Triangle mesh \\
+$\partial \Omega$ & Hole / patch boundary \\
+$\mathbf{n}_i$ & Unit normal at vertex $v_i$ \\
+$L_{\text{cot}}$, $w_{ij}$ & Cotangent Laplacian and edge weights \\
+$\alpha_{ij}, \beta_{ij}$ & Angles opposite edge $(v_i, v_j)$ \\
+$H_i$ & Mean curvature at $v_i$ \\
+$\lambda, \mu$ & Taubin coefficients \\
+$r, \theta, h$ & Mean boundary radius, mean angle, cap height \\
+$w(t) = \sqrt{2t-t^2}$ & Displacement profile \\
+$t_i$ & Normalised geodesic distance from boundary \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\end{document}

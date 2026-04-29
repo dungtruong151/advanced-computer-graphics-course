@@ -1,0 +1,65 @@
+\chapter{MATHEMATICAL PRELIMINARIES}
+
+This chapter collects the four pieces of background needed to read Chapter~4: the cotangent Laplacian, the heat equation on a manifold, implicit Euler time stepping, and Taubin smoothing.
+
+\section{Cotangent Laplacian}
+
+A triangle mesh is a pair $\mathcal{M} = (V, F)$ with vertex set $V \subset \mathbb{R}^3$ and triangular face set $F$. An edge is a \emph{border} edge if it belongs to exactly one face; a closed chain of border edges is a hole.
+
+The Laplace--Beltrami operator $\Delta_{\mathcal{S}}$ on a smooth surface admits several discrete versions. The simplest is the uniform Laplacian, $L_u(v_i) = \sum_j (v_j - v_i) / d_i$, which is cheap but mesh-density dependent. The cotangent Laplacian~\cite{pinkall1993, meyer2003} weights each neighbour by
+\begin{equation}
+w_{ij} = \cot \alpha_{ij} + \cot \beta_{ij}, \label{eq:cot}
+\end{equation}
+where $\alpha_{ij}$ and $\beta_{ij}$ are the two angles opposite the edge $(v_i, v_j)$ in the two faces sharing it (Figure~\ref{fig:cotangent-weights}). The cotangent Laplacian converges to $\Delta_{\mathcal{S}}$ under refinement, is invariant under intrinsic remeshing, and gives the standard mean-curvature normal $L_{\text{cot}}(v_i) = -2 H_i \mathbf{n}_i$. We use it everywhere in this report.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1.1, line join=round]
+        \coordinate (vi) at (0, 0);
+        \coordinate (vj) at (4, 0);
+        \coordinate (va) at (1.7, 2.1);
+        \coordinate (vb) at (2.3, -2.0);
+        \fill[ackblue!8] (vi) -- (vj) -- (va) -- cycle;
+        \fill[ackblue!8] (vi) -- (vj) -- (vb) -- cycle;
+        \draw[thick] (vi) -- (vj);
+        \draw (vi) -- (va) -- (vj);
+        \draw (vi) -- (vb) -- (vj);
+        \draw[ultra thick, ackblue] (vi) -- (vj);
+        \draw[red, thick] (va) ++(-129:0.55) arc[start angle=-129, end angle=-42, radius=0.55];
+        \draw[red, thick] (vb) ++(50:0.55) arc[start angle=50, end angle=139, radius=0.55];
+        \fill (vi) circle (2pt); \node[left]  at (vi) {$v_i$};
+        \fill (vj) circle (2pt); \node[right] at (vj) {$v_j$};
+        \fill (va) circle (2pt); \node[above] at (va) {$v_a$};
+        \fill (vb) circle (2pt); \node[below] at (vb) {$v_b$};
+        \node[red] at ($(va)+(0, -0.95)$) {$\alpha_{ij}$};
+        \node[red] at ($(vb)+(0,  0.95)$) {$\beta_{ij}$};
+    \end{tikzpicture}
+    \caption{Cotangent weight on edge $(v_i, v_j)$, using the two opposite angles $\alpha_{ij}$ and $\beta_{ij}$.}
+    \label{fig:cotangent-weights}
+\end{figure}
+
+A practical detail: $\cot \theta < 0$ for obtuse angles, which can break the maximum principle of the discrete Laplacian. We clamp $w_{ij} \leftarrow \max(w_{ij}, 0)$, which is simple and works on the test meshes. The cleaner alternative is intrinsic Delaunay remeshing~\cite{sharp2020}, but that is substantially more code.
+
+\section{Heat equation and implicit Euler}
+
+The heat equation on a domain $\Omega$ with Dirichlet boundary data $g$ is
+\begin{equation}
+\frac{\partial u}{\partial t} = \lambda \Delta_\Omega u, \qquad u\big|_{\partial\Omega} = g.
+\end{equation}
+As $t \to \infty$, the solution converges to the harmonic extension of $g$ into $\Omega$ --- the smoothest interpolation in the sense of Dirichlet energy. This is the property we want for the diffused normal field on the patch.
+
+For time stepping there is a choice between explicit and implicit Euler. Explicit Euler is conditionally stable, requiring $\Delta t < 2/\rho(L)$, which gets unfavourable as the mesh refines. Implicit Euler,
+\begin{equation}
+(I + \lambda L)\, u^{t+1} = u^t, \label{eq:implicit-euler}
+\end{equation}
+is unconditionally stable for any $\lambda > 0$ when $L$ is positive semi-definite. The matrix $I + \lambda L$ is symmetric positive definite, sparse, and stays the same across iterations --- only the right-hand side changes. This is exactly the case where a one-time Cholesky factorisation pays off.
+
+We use \texttt{Eigen::SimplicialLDLT}, which factors the matrix as $A = LDL^T$ once and then solves each iteration in $O(\text{nnz}(A))$. For the patch sizes we encounter (interior vertex counts of order $10^2$--$10^3$), a single factorisation amortised over 50 iterations is essentially free.
+
+\section{Taubin smoothing}
+
+Plain Laplacian smoothing $v \leftarrow v + \lambda L(v)$ moves each vertex toward the centroid of its neighbours and works well for cleaning high-frequency noise --- but iterated, it shrinks the surface globally. Taubin~\cite{taubin1995} fixes this with a two-step pass: a positive shrink step ($\lambda > 0$) followed by a negative inflate step ($\mu < 0$, $|\mu| > \lambda$). The combined transfer function in the Laplacian eigenbasis,
+\begin{equation}
+f(k) = (1 - \lambda k)(1 - \mu k),
+\end{equation}
+satisfies $f(0) = 1$ (DC preserved) and $|f(k)| < 1$ for high frequencies (noise attenuated). The result is a low-pass filter without shrinkage. We use $\lambda = 0.40$, $\mu = -0.44$, three pairs --- a standard choice from the literature.

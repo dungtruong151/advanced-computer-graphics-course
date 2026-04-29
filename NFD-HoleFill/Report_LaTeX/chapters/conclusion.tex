@@ -1,0 +1,12 @@
+\chapter{CONCLUSION}
+
+This report has described a MeshLab plugin that fills holes by diffusing the boundary normal field across the patch interior using the heat equation. After the diffusion converges, interior vertices are displaced along the diffused normals by an amount estimated from the boundary geometry. The output is a patch that follows the surrounding curvature, which classical fillers do not. On the test set, the symmetric Hausdorff error stays sub-percent on sphere-like inputs and is roughly $2$--$4\times$ smaller than MeshLab's built-in \texttt{Close Holes} on curved surfaces.
+
+The mathematical core of the project lies in the combination of standard ingredients: cotangent Laplacian, implicit Euler with a one-time Cholesky factorisation, the spherical-cap height estimate, the $\sqrt{2t-t^2}$ profile, and Taubin smoothing. The ordering of the stages turned out to matter as much as the choice of operators. In particular, applying uniform Laplacian smoothing after the displacement of Stage~6 silently flattens the dome, because uniform smoothing has the shrinkage property that Taubin was designed to avoid.
+
+Looking back, the parts of the project that ate the most time were not the conceptually hardest. Building MeshLab from source and getting the plugin scaffolding (CMake, Qt MOC, plugin discovery, Eigen include paths) lined up correctly took longer than expected; the algorithm is invariant under build-system pain, but a successful first compile is not. The matrix assembly for Stage~4 --- mapping interior vertices to compact indices, accumulating cotangent triplets with the right symmetry, and feeding the result to \texttt{SimplicialLDLT} --- was the second sink, mostly off-by-one indexing rather than anything mathematically deep. Tuning the Taubin coefficients in Stage~6 to balance spike removal against dome preservation came third.
+
+Three extensions seem worth pursuing.
+A residual-based stopping criterion in the diffusion loop would replace the fixed iteration count and behave more uniformly across mesh sizes.
+A partitioned cap model that fits a separate cap to each ``wedge'' of the boundary would address the saddle-shaped boundaries on which the global cap fit produces visible bias.
+Sharp-feature preservation by detecting crease edges near the boundary and adding them as Dirichlet constraints would close the gap with thin-plate methods on inputs that contain creases.
